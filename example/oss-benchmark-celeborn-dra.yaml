@@ -1,0 +1,90 @@
+# // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# // SPDX-License-Identifier: MIT-0
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: dra-norss-tpcds
+  namespace: oss
+# spec:
+#   nodeSelector:
+#     app: sparktest
+#   type: Python
+#   pythonVersion: "3"
+#   image: 633458367150.dkr.ecr.us-west-2.amazonaws.com/clb-spark-benchmark:3.0_spark${SPARK_VERSION}_client_dra
+#   imagePullPolicy: Always
+#   sparkVersion: 3.3.2
+#   mainApplicationFile: s3://$(BUCKET_PARAM)/shuffle-test.py
+spec:
+  nodeSelector:
+    app: sparktest
+  type: Scala
+  mode: cluster
+  image: 633458367150.dkr.ecr.us-west-2.amazonaws.com/clb-spark-benchmark:3.0_spark3.3_client_dra
+  imagePullPolicy: Always
+  sparkVersion: 3.3.2
+  mainClass: com.amazonaws.eks.tpcds.BenchmarkSQL
+  mainApplicationFile: local:///opt/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar
+  arguments:
+  # TPC-DS data localtion
+    - "s3://$(BUCKET_PARAM)/BLOG_TPCDS-TEST-3T-partitioned"
+  # results location
+    - "s3://$(BUCKET_PARAM)/OSS_TPCDS-TEST-3T-RESULT"
+  # Path to kit in the docker image
+    - "/opt/tpcds-kit/tools"
+  # Data Format
+    - "parquet"
+  # Scale factor (in GB)
+    - "3000"
+  # Number of iterations
+    - "1"
+  # Optimize queries with hive tables
+    - "false"
+  # Filter queries, will run all if empty - "q98-v2.4,q99-v2.4,ss_max-v2.4,q95-v2.4"
+    - "q24a-v2.4,q33-v2.4,q37-v2.4,q43-v2.4,q77-v2.4" 
+  # Logging set to WARN
+    - "true"
+  sparkConf:
+    "spark.kubernetes.driver.annotation.name": "oss-clb-dra-norss"
+    "spark.serializer": "org.apache.spark.serializer.KryoSerializer"
+    "spark.network.timeout": "2000s"
+    "spark.executor.heartbeatInterval": "300s" 
+    # DRA
+    "spark.dynamicAllocation.enabled": "true"
+    "spark.dynamicAllocation.minExecutors": "1"
+    "spark.dynamicAllocation.maxExecutors": "47"
+    "spark.dynamicAllocation.shuffleTracking.enabled": "false"
+    "spark.sql.adaptive.localShuffleReader.enabled": "false"
+    "spark.sql.optimizedUnsafeRowSerializers.enabled": "false"
+    # IRSA
+    "spark.kubernetes.executor.podNamePrefix": "oss-clb-dra"
+    "spark.hadoop.fs.s3a.aws.credentials.provider": "com.amazonaws.auth.WebIdentityTokenCredentialsProvider"
+    "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2"
+    "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59a"
+    # RSS
+    "spark.celeborn.shuffle.chunk.size": "4m"
+    "spark.celeborn.push.maxReqsInFlight": "128"
+    "spark.celeborn.client.push.replicate.enabled": "false"
+    "spark.celeborn.client.push.excludeWorkerOnFailure.enabled": "true"
+    "spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled": "true"
+    "spark.celeborn.client.commitFiles.ignoreExcludedWorker": "true"
+    "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.RssShuffleManager"
+    "spark.shuffle.sort.io.plugin.class": "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO",
+    "spark.celeborn.master.endpoints": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
+  driver:
+    env:
+      - name: BUCKET_PARAM
+        valueFrom:
+          configMapKeyRef:
+            name: special-config
+            key: codeBucket   
+    cores: 3
+    coreLimit: "4.1"
+    memory: "4g"
+    memoryOverhead: "1000"
+    serviceAccount: oss 
+  executor:
+    cores: 4
+    coreLimit: "4.3"
+    memory: "6g"
+    memoryOverhead: "2g"

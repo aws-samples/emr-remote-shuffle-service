@@ -1,0 +1,141 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Default values for celeborn.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# we provide a default celeborn image, you can also replace to your image
+# TODO rebuild celeborn official image
+image:
+  # repository: public.ecr.aws/myang-poc/celeborn-rss
+  # tag: spark3.3_17-jdk
+  repository: 633458367150.dkr.ecr.us-west-2.amazonaws.com/celeborn-server
+  tag: spark3.5_8-jdk
+  pullPolicy: Always
+
+nodeSelector:
+  app: rss
+
+# master replicas should not less than 3
+masterReplicas: 3
+# worker replicas set on demand, should less than node number
+workerReplicas: 3
+hostNetwork: false
+dnsPolicy: ClusterFirst
+securityContext:
+  runAsUser: 10006
+  runAsGroup: 10006
+  fsGroup: 10006
+volumes:
+  master:
+    - mountPath: /rss1/rss_ratis/
+      hostPath: /local1/rss_ratis
+      type: hostPath
+      capacity: 100g
+  worker:
+    - mountPath: /rss1/disk1
+      hostPath: /local1/disk1
+      type: hostPath
+      diskType: SSD
+      capacity: 5t
+    - mountPath: /rss2/disk2
+      hostPath: /local2/disk2
+      type: hostPath
+      diskType: SSD
+      capacity: 5t
+# celeborn configurations      
+celeborn:
+  celeborn.master.ha.enabled: true
+  celeborn.metrics.enabled: true
+  celeborn.master.metrics.prometheus.port: 9098
+  celeborn.worker.metrics.prometheus.port: 9096
+  celeborn.worker.monitor.disk.enabled: false
+  celeborn.shuffle.chunk.size: 8m
+  celeborn.rpc.io.serverThreads: 64
+  celeborn.rpc.io.numConnectionsPerPeer: 8
+  celeborn.replicate.io.numConnectionsPerPeer: 24
+  celeborn.rpc.io.clientThreads: 64
+  celeborn.rpc.dispatcher.numThreads: 4
+  celeborn.worker.flusher.buffer.size: 256K  #128k
+  celeborn.worker.flusher.threads: 512
+  celeborn.worker.flusher.ssd.threads: 512
+  celeborn.worker.fetch.io.threads: 256
+  celeborn.worker.push.io.threads: 128
+  celeborn.client.push.stageEnd.timeout: 120s
+  celeborn.worker.directMemoryRatioToResume: 0.65
+  celeborn.worker.commitFiles.threads: 128
+environments:
+  CELEBORN_MASTER_MEMORY: 8g
+  CELEBORN_MASTER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-master.out -Dio.netty.leakDetectionLevel=advanced"
+  CELEBORN_WORKER_MEMORY: 8g
+  CELEBORN_WORKER_OFFHEAP_MEMORY: 130g
+  CELEBORN_WORKER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-worker.out -Dio.netty.leakDetectionLevel=advanced"
+  CELEBORN_NO_DAEMONIZE: 1
+  TZ: "Australia/Melbourne"
+
+podMonitor:
+  enable: true
+  podMetricsEndpoint:
+    scheme: http
+    interval: 5s
+    portName: metrics
+
+service:
+    type: ClusterIP
+    port: 9097
+cluster:
+  name: cluster
+
+configmap: celeborn-conf
+
+# resources:
+resources: {}
+podAnnotations: {}
+
+affinity:
+  master:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - celeborn
+              - key: app.kubernetes.io/role
+                operator: In
+                values:
+                  - master
+          topologyKey: kubernetes.io/hostname
+  worker:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - celeborn
+              - key: app.kubernetes.io/role
+                operator: In
+                values:
+                  - worker
+          topologyKey: "kubernetes.io/hostname"
+
+tolerations: []
+

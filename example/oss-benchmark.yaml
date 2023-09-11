@@ -1,0 +1,97 @@
+# // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# // SPDX-License-Identifier: MIT-0
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: oss-spark-benchmark
+  namespace: oss
+spec:
+  nodeSelector:
+    app: sparktest
+  type: Scala
+  mode: cluster
+  image: public.ecr.aws/myang-poc/benchmark:oss-3.3.1
+  imagePullPolicy: Always
+  sparkVersion: 3.3.1
+  mainClass: com.amazonaws.eks.tpcds.BenchmarkSQL
+  mainApplicationFile: local:///opt/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar
+  arguments:
+  # TPC-DS data localtion
+    - "s3://$(BUCKET_PARAM)/BLOG_TPCDS-TEST-3T-partitioned"
+  # results location
+    - "s3://$(BUCKET_PARAM)/OSS_TPCDS-TEST-3T-RESULT"
+  # Path to kit in the docker image
+    - "/opt/tpcds-kit/tools"
+  # Data Format
+    - "parquet"
+  # Scale factor (in GB)
+    - "3000"
+  # Number of iterations
+    - "3"
+  # Optimize queries with hive tables
+    - "false"
+  # Filter queries, will run all if empty - "q98-v2.4,q99-v2.4,ss_max-v2.4,q95-v2.4"
+    - "" 
+  # Logging set to WARN
+    - "true"
+  sparkConf:
+    "spark.network.timeout": "2000s"
+    "spark.executor.heartbeatInterval": "300s"  
+    # AQE
+    "spark.sql.adaptive.enabled": "true"
+    "spark.sql.adaptive.localShuffleReader.enabled": "true"
+    "spark.sql.adaptive.coalescePartitions.enabled": "true"
+    "spark.sql.adaptive.skewJoin.enabled": "true"
+    # IRSA for S3 connection
+    "spark.kubernetes.executor.podNamePrefix": "oss-spark-tpcds"
+    "spark.hadoop.fs.s3a.aws.credentials.provider": "com.amazonaws.auth.WebIdentityTokenCredentialsProvider"
+    "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2" 
+
+    "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c5d9a"
+
+  driver:
+    initContainers:  
+    - name: volume-permission
+      image: public.ecr.aws/y4g4v0z7/busybox
+      command: ['sh', '-c', 'mkdir /ossdata1; chown -R 1000:1000 /ossdata1']
+      volumeMounts:
+        - name: spark-local-dir-1
+          mountPath: /ossdata1
+    env:
+      - name: BUCKET_PARAM
+        valueFrom:
+          configMapKeyRef:
+            name: special-config
+            key: codeBucket   
+    cores: 3
+    coreLimit: "4.1"
+    memory: "4g"
+    memoryOverhead: "1000"
+    serviceAccount: oss 
+    volumeMounts:
+      - name: spark-local-dir-1
+        mountPath: /ossdata1
+  executor:
+    initContainers:  
+    - name: volume-permission
+      image: public.ecr.aws/y4g4v0z7/busybox
+      command: ['sh', '-c', 'mkdir /ossdata1; chown -R 1000:1000 /ossdata1']
+      volumeMounts:
+        - name: spark-local-dir-1
+          mountPath: /ossdata1
+    cores: 4
+    coreLimit: "4.3"
+    memory: "7g"
+    memoryOverhead: "2g"
+    # 7 executors per node  
+    instances: 47
+    volumeMounts:
+      - name: spark-local-dir-1
+        mountPath: /ossdata1
+  volumes:
+    - name: spark-local-dir-1
+      hostPath:
+        path: /local1
+  restartPolicy:
+    type: Never

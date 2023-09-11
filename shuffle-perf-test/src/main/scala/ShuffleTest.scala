@@ -1,7 +1,6 @@
 import org.apache.spark.{SparkConf,SparkContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{current_timestamp, unix_timestamp}
-// import datatime.datetime
 
 object ShuffleTtest {
   def main(args: Array[String]): Unit = {
@@ -9,7 +8,6 @@ object ShuffleTtest {
     val spark = SparkSession
       .builder()
       .appName("ShuffleTest")
-      // .config("spark.master", "local")
       .getOrCreate()
     
     // #TEST 1# - huge shuffle

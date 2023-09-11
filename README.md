@@ -15,7 +15,7 @@ In this repo, we select Aapche Celeborn as the remote shuffle service for EMR. T
 2. [kubectl >=1.24](https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html)
 3. [eksctl >= 0.143.0](https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html)
 4. [helm](https://helm.sh/docs/intro/install/)
-5. [Buildx included by Docker Desktop installation](https://docs.docker.com/desktop/)
+5. [OPTIONAL: Buildx included by Docker Desktop installation](https://docs.docker.com/desktop/)
 
 ## Infrastructure
 If you do not have your own environment to test the remote shuffle solution, run the command to setup the infrastructure you need. Change the EKS cluster name and AWS region if needed.
@@ -27,13 +27,13 @@ export AWS_REGION=us-east-1
 ```
 The shell script provides a one-click experience to create an EMR on EKS environment and OSS Spark Operator on a single EKS cluster. The EKS cluster contains the following managed nodegroups which are located in a single AZ within the same [Cluster placment strategy](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html) to achieve the low-latency network performance for the intercommunication between Spark apps and shuffle services. Comment out unwanted EKS node groups from the `eks_provision.sh` file if needed.
 
-- 1 - [`rss`](https://github.com/aws-samples/aws-emr-utilities/blob/da83fd0d2d7c60d94b92ffc90da1cb2170ed21de/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L125) can scale i3en.6xlarge instances from 1 to 20 in **AZ-a**. They are labelled as `app=rss` to host the RSS servers. 2 SSD disks are mounted to each EC2 instance.
-- 2 - [`c59a`](https://github.com/aws-samples/aws-emr-utilities/blob/da83fd0d2d7c60d94b92ffc90da1cb2170ed21de/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L169) can scale c5.9xlarge instances from 1 to 7 at **AZ-a**, which only has a 30GB-root volume. They are labelled with `app=sparktest` to run multiple EMR on EKS or OSS Spark jobs in parallel. The nodegroup is used by testing Spark apps with remote shuffle service enabled.
-- 3 - [`c5d9a`](https://github.com/aws-samples/aws-emr-utilities/blob/da83fd0d2d7c60d94b92ffc90da1cb2170ed21de/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L204) can scales c5d.9xlarge instances from 1 to 7 at **AZ-a**. They are also labelled as `app=sparktest` to run EMR on EKS or OSS Spark jobs without RSS. Additionally, the nodegroup can be used to run TPCDS source data generation job if needed. 
+- 1 - [`rss`](https://github.com/aws-samples/emr-remote-shuffle-service/blob/8e6300b65f04b1846a081e8c496101fc20cfd084/eks_provision.sh#L125) can scale i3en.6xlarge instances from 1 to 20 in **AZ-a**. They are labelled as `app=rss` to host the RSS servers. 2 SSD disks are mounted to each EC2 instance.
+- 2 - [`c59a`](https://github.com/aws-samples/emr-remote-shuffle-service/blob/8e6300b65f04b1846a081e8c496101fc20cfd084/eks_provision.sh#L149) can scale c5.9xlarge instances from 1 to 7 at **AZ-a**, which only has a 30GB-root volume. They are labelled with `app=sparktest` to run multiple EMR on EKS or OSS Spark jobs in parallel. The nodegroup is used by testing Spark apps with remote shuffle service enabled.
+- 3 - [`c5d9a`](https://github.com/aws-samples/emr-remote-shuffle-service/blob/8e6300b65f04b1846a081e8c496101fc20cfd084/eks_provision.sh#L166) can scales c5d.9xlarge instances from 1 to 7 at **AZ-a**. They are also labelled as `app=sparktest` to run EMR on EKS or OSS Spark jobs without RSS. Additionally, the nodegroup can be used to run TPCDS source data generation job if needed. 
 
 ## Enable Remote Shuffle Server (RSS)
 
-Apache Celeborn supports Spark 2.4/3.0/3.1/3.2/3.3/3.4 and flink 1.14/1.15/1.17. The test was done under Java 8 environment only.
+Apache Celeborn supports Spark 2.4/3.0/3.1/3.2/3.3/3.4/3.5 and flink 1.14/1.15/1.17. The test was done under Java 8 environment only.
 
 ```bash
 git clone https://github.com/aws-samples/emr-remote-shuffle-service.git

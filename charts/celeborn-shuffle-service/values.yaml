@@ -24,7 +24,7 @@
 image:
   repository: public.ecr.aws/myang-poc/celeborn-rss
   tag: spark3.3_17-jdk
-  # repository: 021732063925.dkr.ecr.us-west-2.amazonaws.com/celeborn-server
+  # repository: ACCOUNTID.dkr.ecr.us-west-2.amazonaws.com/celeborn-server
   # tag: spark3.5_8-jdk
   pullPolicy: Always
 

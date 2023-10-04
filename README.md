@@ -1,10 +1,10 @@
 # EMR remote shuffle service
 
-Remote Shuffle Service provides the capability for Apache Spark applications to store shuffle data 
-on remote servers. See more details on Spark community document: 
+Remote Shuffle Service (RSS) provides the capability for Apache Spark applications to store shuffle data 
+on a cluster of remote servers. See more details on Spark community document: 
 [[SPARK-25299][DISCUSSION] Improving Spark Shuffle Reliability](https://docs.google.com/document/d/1uCkzGGVG17oGC6BJ75TpzLAZNorvrAU3FRd2X-rVHSM/edit?ts=5e3c57b8).
 
-In this repo, we select Aapche Celeborn as the remote shuffle service for EMR. The high level design of Apache Celeborn can be found [here](https://github.com/apache/incubator-celeborn).
+In this repo, we select [Aapche Celeborn](https://celeborn.apache.org/) as the remote shuffle service for EMR. The high level design of Apache Celeborn can be found [here](https://github.com/apache/incubator-celeborn).
 
 # Setup instructions:
 * [1. Install Apache Celeborn for EMR on EKS](#1-install-apache-celeborn-on-eks)
@@ -25,7 +25,7 @@ export EKSCLUSTER_NAME=eks-rss
 export AWS_REGION=us-east-1
 ./eks_provision.sh
 ```
-The shell script provides a one-click experience to create an EMR on EKS environment and OSS Spark Operator on a single EKS cluster. The EKS cluster contains the following managed nodegroups which are located in a single AZ within the same [Cluster placment strategy](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html) to achieve the low-latency network performance for the intercommunication between Spark apps and shuffle services. Comment out unwanted EKS node groups from the `eks_provision.sh` file if needed.
+The shell script provides a one-click experience to create an EMR on EKS environment and OSS Spark Operator on a single EKS cluster. The EKS cluster contains the following managed nodegroups which are located in a single AZ with a same [Cluster placment strategy](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html), in order to achieve the low-latency network performance for the intercommunication between Spark apps and shuffle services. Comment out unwanted EKS node groups from the `eks_provision.sh` file if needed.
 
 - 1 - [`rss`](https://github.com/aws-samples/emr-remote-shuffle-service/blob/8e6300b65f04b1846a081e8c496101fc20cfd084/eks_provision.sh#L125) can scale i3en.6xlarge instances from 1 to 20 in **AZ-a**. They are labelled as `app=rss` to host the RSS servers. 2 SSD disks are mounted to each EC2 instance.
 - 2 - [`c59a`](https://github.com/aws-samples/emr-remote-shuffle-service/blob/8e6300b65f04b1846a081e8c496101fc20cfd084/eks_provision.sh#L149) can scale c5.9xlarge instances from 1 to 7 at **AZ-a**, which only has a 30GB-root volume. They are labelled with `app=sparktest` to run multiple EMR on EKS or OSS Spark jobs in parallel. The nodegroup is used by testing Spark apps with remote shuffle service enabled.
@@ -33,16 +33,23 @@ The shell script provides a one-click experience to create an EMR on EKS environ
 
 ## Enable Remote Shuffle Server (RSS)
 
-Apache Celeborn supports Spark 2.4/3.0/3.1/3.2/3.3/3.4/3.5 and flink 1.14/1.15/1.17. The test was done under Java 8 environment only.
+Apache Celeborn supports Spark 2.4/3.0/3.1/3.2/3.3/3.4/3.5 and flink 1.14/1.15/1.17. The test was done under Java 8 environment only. However, you can compile the project based on Java 11 or Java 17. The only changes need to be done are:
+**pom.xml**
+```bash
+-    <java.version>8</java.version>
++    <java.version>17</java.version>
+```
+Then set correct `JAVA_HOME` for both Celeborn server and client: `export JAVA_HOME=/usr/lib/jvm/YOUR_JAVA_VERSION`
+
+
+There are 2 options to host the RSS server:
+
+### 1. Install Apache Celeborn on EKS
 
 ```bash
 git clone https://github.com/aws-samples/emr-remote-shuffle-service.git
 cd emr-remote-shuffle-service
 ```
-
-There are 2 options to host the RSS server:
-
-### 1. Install Apache Celeborn on EKS
 
 #### Build Docker Images
 For the best practice in security, it's recommended to build your own images and publish them to your own container repository.
@@ -137,6 +144,7 @@ To Setup Amazon Managed Grafana dashboard sourced from Amazon Managed Prometheus
 Celeborn's helm chart installs Prometheus Operator by default. In this exmaple, we will use AWS serverelss offerings: Amazon Managed Prometheus (AMP) and Amazon Managed Grafana to collect metrics and visulaize the RSS server performance in EKS.
 
 ```bash
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 kubectl create namespace prometheus
 amp=$(aws amp list-workspaces --query "workspaces[?alias=='$EKSCLUSTER_NAME'].workspaceId" --output text)
 if [ -z "$amp" ]; then
@@ -147,7 +155,7 @@ else
     export WORKSPACE_ID=$amp
 fi
 sed -i -- 's/{AWS_REGION}/'$AWS_REGION'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
-sed -i -- 's/{ACCOUNTID}/'$ACCOUNTID'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
+sed -i -- 's/{ACCOUNTID}/'$ACCOUNT_ID'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
 sed -i -- 's/{WORKSPACE_ID}/'$WORKSPACE_ID'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
 sed -i -- 's/{EKSCLUSTER_NAME}/'$EKSCLUSTER_NAME'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
 ```
@@ -443,11 +451,16 @@ All jobs will run in a single namespace `emr` but seperate nodegroups in EKS clu
 ```bash
 # go to the project root directory
 cd emr-remote-shuffle-service
-export EMRCLUSTER_NAME=<YOUR_EKS_CLUSTER_NAME>
-export AWS_REGION=<YOUR_REGION>
-# Run TPCDS test with RSS enabled - against c59a nodegroup
-./example/emr6.10-benchmark-celeborn.sh
-# RUN EMR on EKS without RSS - against c5d9a nodegroup
+export EMRCLUSTER_NAME=<YOUR_EMR_VIRTUAL_CLUSTER_NAME:emr-on-eks-rss>
+export AWS_REGION=<YOUR_REGION:us-west-2>
+
+# create a job template first
+aws emr-containers create-job-template --cli-input-json file://example/pod-template/clb-dra-job-template.json
+aws emr-containers create-job-template --cli-input-json file://example/pod-template/dra-tracking-job-template.json
+
+# Run TPCDS test with RSS & DRA enabled - against c59a nodegroup
+./example/emr6.10-benchmark-celeborn-dra.sh
+# RUN EMR on EKS with DRA and shuffle tracking on, but without RSS - against c5d9a nodegroup
 ./example/emr6.10-benchmark-emr.sh
 # check job progress
 kubectl get po -n emr
@@ -463,9 +476,10 @@ For example:
 ```bash
 # oss spark without RSS
 kubectl apply -f oss-benchmark.yaml
-
 # with RSS
 kubectl apply -f oss-benchmark-celeborn.yaml
+# turn on DRA with RSS
+kubectl apply -f oss-benchmark-celeborn-dra.yaml
 ```
 
 ```bash

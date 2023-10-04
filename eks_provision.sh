@@ -97,14 +97,14 @@ iam:
       labels: {aws-usage: "cluster-ops"}
     wellKnownPolicies:
       autoScaler: true
-    roleName: eksctl-cluster-autoscaler-role
+    roleName: $EKSCLUSTER_NAME-autoscaler-role
   - metadata:
       name: aws-load-balancer-controller
       namespace: kube-system
       labels: {aws-usage: "cluster-ops"}
     wellKnownPolicies:
       awsLoadBalancerController: true
-    roleName: AmazonEKSLoadBalancerControllerRole
+    roleName: $EKSCLUSTER_NAME-LoadBalancerControllerRole
     attachPolicyARNs:
     - arn:aws:iam::$ACCOUNTID:policy/AWSLoadBalancerControllerIAMPolicy
   - metadata:

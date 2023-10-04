@@ -1,0 +1,130 @@
+{
+   "name": "dra_tracking_template",
+   "jobTemplateData": {
+        "executionRoleArn": "${EmrRoleARN}", 
+        "releaseLabel": "emr-6.10.0-latest",
+        "jobDriver": {
+            "sparkSubmitJobDriver": { 
+                "entryPoint": "local:///usr/lib/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar",
+                "entryPointArguments":["${InputDataLocation}","${OutputDataLocation}","/opt/tpcds-kit/tools","parquet","3000","1","false","${QueryList}","true"],
+                "sparkSubmitParameters": "--class com.amazonaws.eks.tpcds.BenchmarkSQL --conf spark.driver.cores=2 --conf spark.driver.memory=3g --conf spark.executor.cores=4 --conf spark.executor.memory=6g"
+            }
+        },
+        "configurationOverrides": {
+            "applicationConfiguration": [
+            {
+                "classification": "spark-defaults",
+                "properties": {
+                  "spark.kubernetes.driver.podTemplateFile": "${DriverPodTemplateS3Path}",
+                  "spark.kubernetes.executor.podTemplateFile": "${ExecutorPodTemplateS3Path}",
+                  "spark.kubernetes.container.image": "${CustomImageURI}",
+                  "spark.network.timeout": "2000s",
+                  "spark.executor.heartbeatInterval": "300s",
+                  "spark.kubernetes.executor.podNamePrefix": "${PodNamePrefix}",
+                  "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "${EKSNodegroup}",
+                  "spark.driver.memoryOverhead": "1000",
+                  "spark.executor.memoryOverhead": "2G",
+
+                  "spark.shuffle.service.enabled": "false",
+                  "spark.dynamicAllocation.enabled": "${DRA_enabled}",
+                  "spark.dynamicAllocation.shuffleTracking.enabled": "${DRA_shuffleTracking}",
+                  "spark.sql.adaptive.localShuffleReader.enabled":"${AQE_localShuffleReader}",
+                  "spark.dynamicAllocation.minExecutors": "1",
+                  "spark.dynamicAllocation.maxExecutors": "${DRA_maxExecutors}",
+                  "spark.dynamicAllocation.executorIdleTimeout": "${DRA_executorIdleTimeout}",
+                  "spark.dynamicAllocation.schedulerBacklogTimeout": "5s",
+                  "spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "5s",
+
+                  "spark.metrics.appStatusSource.enabled":"true",
+                  "spark.ui.prometheus.enabled":"true",
+                  "spark.executor.processTreeMetrics.enabled":"true",
+                  "spark.kubernetes.driver.annotation.prometheus.io/scrape":"true",
+                  "spark.kubernetes.driver.annotation.prometheus.io/path":"/metrics/executors/prometheus/",
+                  "spark.kubernetes.driver.annotation.prometheus.io/port":"4040",
+                  "spark.kubernetes.driver.service.annotation.prometheus.io/scrape":"true",
+                  "spark.kubernetes.driver.service.annotation.prometheus.io/path":"/metrics/driver/prometheus/",
+                  "spark.kubernetes.driver.service.annotation.prometheus.io/port":"4040",
+                  "spark.metrics.conf.*.sink.prometheusServlet.class":"org.apache.spark.metrics.sink.PrometheusServlet",
+                  "spark.metrics.conf.*.sink.prometheusServlet.path":"/metrics/driver/prometheus/",
+                  "spark.metrics.conf.master.sink.prometheusServlet.path":"/metrics/master/prometheus/",
+                  "spark.metrics.conf.applications.sink.prometheusServlet.path":"/metrics/applications/prometheus/"
+            }},
+            {
+                "classification": "spark-log4j",
+                "properties": {
+                  "rootLogger.level" : "${LoggerLevel}"
+                }
+            }], 
+            "monitoringConfiguration": {
+                "persistentAppUI": "ENABLED",
+                "cloudWatchMonitoringConfiguration": {
+                    "logGroupName": "emr_eks",
+                    "logStreamNamePrefix": "dra_tracking"
+                  },
+                "s3MonitoringConfiguration": {
+                    "logUri": "${LogS3BucketUri}"
+                }
+            }
+        },
+        "jobTags": { 
+            "name" : "dra-tracking-norss-test" 
+        },
+        "parameterConfiguration": {
+            "EmrRoleARN":{
+                "type": "STRING"
+            },
+            "InputDataLocation":{
+                "type": "STRING"
+            },
+            "OutputDataLocation":{
+                "type": "STRING"
+            },
+            "PodNamePrefix": {
+                "type": "STRING",
+                "defaultValue": "emrkes-tpcds"
+            },
+            "QueryList":{
+                "type": "STRING"
+            },
+            "DriverPodTemplateS3Path":{
+                "type": "STRING"
+            },
+             "ExecutorPodTemplateS3Path":{
+                "type": "STRING"
+            },
+            "CustomImageURI":{
+                "type": "STRING"
+            },
+            "EKSNodegroup":{
+                "type": "STRING"
+            },
+            "DRA_enabled": {
+                "type": "STRING",
+                "defaultValue": "false"
+            },
+            "DRA_maxExecutors": {
+                "type": "STRING",
+                "defaultValue": "47"
+            },
+            "DRA_executorIdleTimeout":{
+                "type": "STRING",
+                "defaultValue": "60"
+            },
+            "DRA_shuffleTracking":{
+                "type": "STRING",
+                "defaultValue": "true"
+            },
+            "AQE_localShuffleReader": {
+                "type": "STRING",
+                "defaultValue": "true"
+            },
+            "LoggerLevel":{
+                "type": "STRING",
+                "defaultValue": "INFO"
+            },
+            "LogS3BucketUri": {
+                "type": "STRING"
+            }
+        }
+    }
+}

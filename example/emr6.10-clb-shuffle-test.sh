@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-FileCopyrightText: Copyright 2021 Amazon.com, Inc. or its affiliates.
 # SPDX-License-Identifier: MIT-0
-
+        
 # "spark.celeborn.client.spark.push.unsafeRow.fastWrite.enabled": "false"
 
 export EMRCLUSTER_NAME=emr-on-eks-rss
@@ -19,7 +19,7 @@ aws emr-containers start-job-run \
   --release-label emr-6.10.0-latest \
   --job-driver '{
   "sparkSubmitJobDriver": {
-      "entryPoint": "s3://'$S3BUCKET'/shuffle-test_2.12-1.0.jar",
+      "entryPoint": "s3://'$S3BUCKET'/app_code/shuffle-test_2.12-1.0.jar",
       "sparkSubmitParameters": "--conf spark.driver.cores=1 --conf spark.driver.memory=2g --conf spark.executor.cores=4 --conf spark.executor.memory=6g"}}' \
   --retry-policy-configuration '{"maxAttempts": 3}' \
   --configuration-overrides '{
@@ -39,6 +39,7 @@ aws emr-containers start-job-run \
           "spark.dynamicAllocation.enabled": "true",
           "spark.dynamicAllocation.minExecutors": "1",
           "spark.dynamicAllocation.maxExecutors": "96",
+          "spark.dynamicAllocation.minExecutors": "1"
           "spark.dynamicAllocation.executorIdleTimeout": "10s",
           "spark.dynamicAllocation.shuffleTracking.enabled": "false",
           "spark.sql.adaptive.localShuffleReader.enabled":"false",
@@ -54,21 +55,7 @@ aws emr-containers start-job-run \
           "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.SparkShuffleManager",
           "spark.shuffle.sort.io.plugin.class": "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO",
           "spark.celeborn.master.endpoints": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097",
-          "spark.sql.optimizedUnsafeRowSerializers.enabled":"false",
-
-          "spark.metrics.appStatusSource.enabled":"true",
-          "spark.ui.prometheus.enabled":"true",
-          "spark.executor.processTreeMetrics.enabled":"true",
-          "spark.kubernetes.driver.annotation.prometheus.io/scrape":"true",
-          "spark.kubernetes.driver.annotation.prometheus.io/path":"/metrics/executors/prometheus/",
-          "spark.kubernetes.driver.annotation.prometheus.io/port":"4040",
-          "spark.kubernetes.driver.service.annotation.prometheus.io/scrape":"true",
-          "spark.kubernetes.driver.service.annotation.prometheus.io/path":"/metrics/driver/prometheus/",
-          "spark.kubernetes.driver.service.annotation.prometheus.io/port":"4040",
-          "spark.metrics.conf.*.sink.prometheusServlet.class":"org.apache.spark.metrics.sink.PrometheusServlet",
-          "spark.metrics.conf.*.sink.prometheusServlet.path":"/metrics/driver/prometheus/",
-          "spark.metrics.conf.master.sink.prometheusServlet.path":"/metrics/master/prometheus/",
-          "spark.metrics.conf.applications.sink.prometheusServlet.path":"/metrics/applications/prometheus/"
+          "spark.sql.optimizedUnsafeRowSerializers.enabled":"false"
       }},
       {
         "classification": "spark-log4j",

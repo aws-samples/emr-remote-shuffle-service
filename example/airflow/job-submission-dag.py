@@ -22,8 +22,8 @@ dag = DAG(
     tags=['demo']
 )
 submit = SparkKubernetesOperator(
-   task_id='emr_spark_operator',
-   application_file="emr-operator-celeborn-dra.yaml",
+   task_id='n-spark-pi',
+   application_file="spark-pi.yaml",
    namespace="spark-operator",
    trigger_rule="all_success",
    depends_on_past=False,

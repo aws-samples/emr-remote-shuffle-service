@@ -22,7 +22,7 @@ dag = DAG(
     tags=['demo']
 )
 submit = SparkKubernetesOperator(
-   task_id='n-spark-pi',
+   task_id='n_spark_pi',
    application_file="spark-pi.yaml",
    namespace="spark-operator",
    trigger_rule="all_success",

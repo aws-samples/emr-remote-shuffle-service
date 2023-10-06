@@ -16,7 +16,7 @@ default_args = {
     'retries': 3
 }
 dag = DAG(
-    'demo',
+    'demo2',
     default_args=default_args,
     schedule_interval=timedelta(days=1),
     tags=['demo']

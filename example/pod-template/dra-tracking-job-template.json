@@ -30,7 +30,6 @@
                   "spark.dynamicAllocation.shuffleTracking.enabled": "${DRA_shuffleTracking}",
                   "spark.sql.adaptive.localShuffleReader.enabled":"${AQE_localShuffleReader}",
                   "spark.dynamicAllocation.minExecutors": "1",
-                  "spark.dynamicAllocation.maxExecutors": "${DRA_maxExecutors}",
                   "spark.dynamicAllocation.executorIdleTimeout": "${DRA_executorIdleTimeout}",
                   "spark.dynamicAllocation.schedulerBacklogTimeout": "5s",
                   "spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "5s",
@@ -101,10 +100,6 @@
             "DRA_enabled": {
                 "type": "STRING",
                 "defaultValue": "false"
-            },
-            "DRA_maxExecutors": {
-                "type": "STRING",
-                "defaultValue": "47"
             },
             "DRA_executorIdleTimeout":{
                 "type": "STRING",

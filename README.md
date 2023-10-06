@@ -459,7 +459,7 @@ aws emr-containers create-job-template --cli-input-json file://example/pod-templ
 aws emr-containers create-job-template --cli-input-json file://example/pod-template/dra-tracking-job-template.json
 
 # Run TPCDS test with RSS & DRA enabled - against c59a nodegroup
-./example/emr6.10-benchmark-celeborn-dra.sh
+./example/emr6.10-benchmark-celeborn.sh
 # RUN EMR on EKS with DRA and shuffle tracking on, but without RSS - against c5d9a nodegroup
 ./example/emr6.10-benchmark-emr.sh
 # check job progress

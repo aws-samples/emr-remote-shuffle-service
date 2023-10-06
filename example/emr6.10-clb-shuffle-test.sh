@@ -14,7 +14,7 @@ export ECR_URL="$ACCOUNTID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
 aws emr-containers start-job-run \
   --virtual-cluster-id $VIRTUAL_CLUSTER_ID \
-  --name em613-clb-shuffle-dra-timeut96 \
+  --name em613-clb-shuffle-dra-timeout96 \
   --execution-role-arn $EMR_ROLE_ARN \
   --release-label emr-6.10.0-latest \
   --job-driver '{

@@ -21,25 +21,36 @@ metadata:
   namespace: spark-operator
 spec:
   type: Scala
-  sparkVersion: 2.4.4
+  sparkVersion: 3.3.1
   mode: cluster
-  image: gcr.io/spark-operator/spark:v2.4.4
+  image: "895885662937.dkr.ecr.us-west-2.amazonaws.com/spark/emr-6.10.0:latest"
   imagePullPolicy: Always
   mainClass: org.apache.spark.examples.SparkPi
-  mainApplicationFile: "local:///opt/spark/examples/jars/spark-examples_2.11-2.4.4.jar"
+  mainApplicationFile: "local:///usr/lib/spark/examples/jars/spark-examples.jar"
   restartPolicy:
     type: Never
+  volumes:
+    - name: "test-volume"
+      hostPath:
+        path: "/tmp"
+        type: Directory  
   driver:
     cores: 1
     coreLimit: "1000m"
     memory: "512m"
     labels:
-      version: 2.4.4  
+      version: 3.3.1
     serviceAccount: emr-containers-sa-spark
+    volumeMounts:
+      - name: "test-volume"
+        mountPath: "/tmp"
   executor:
     cores: 1
     coreLimit: "1000m"
     instances: 1
     memory: "512m"
     labels:
-      version: 2.4.4
+      version: 3.3.1
+    volumeMounts:
+      - name: "test-volume"
+        mountPath: "/tmp"  

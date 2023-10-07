@@ -3,10 +3,10 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: emr-operator-clb-dra
+  name: emr-operator-dra
   namespace: spark-operator
   annotations:
-    name: emr-eks-operator-clb-dra
+    name: emr-eks-operator-dra
 spec:
   nodeSelector:
     app: sparktest
@@ -34,7 +34,7 @@ spec:
   # Optimize queries with hive tables
     - "false"
   # Filter queries, will run all if empty - "q98-v2.4,q99-v2.4,ss_max-v2.4,q95-v2.4"
-    - "q1-v2.4,q2-v2.4,q3-v2.4,q24a-v2.4,q25-v2.4,q26-v2.4,q27-v2.4,q30-v2.4q31-v2.4,q32-v2.4,q33-v2.4,q34-v2.4,q36-v2.4,q37-v2.4,q39a-v2.4,q39b-v2.4,q41-v2.4,q42-v2.4,q43-v2.4,q52-v2.4,q53-v2.4,q55-v2.4,q56-v2.4,q60-v2.4,q61-v2.4,q63-v2.4,q73-v2.4,q77-v2.4,q83-v2.4,q86-v2.4,q98-v2.4" 
+    - "" 
   # Logging set to WARN
     - "true"
   hadoopConf:
@@ -49,7 +49,7 @@ spec:
   dynamicAllocation:
     enabled: true
     minExecutors: 1
-    maxExecutors: 100
+    # maxExecutors: 100
   sparkConf:
     # genernal
     # spark.eventLog.enabled: "true"
@@ -64,24 +64,24 @@ spec:
     # spark.dynamicAllocation.enabled": "true"
     # spark.dynamicAllocation.minExecutors": "1"
     # spark.dynamicAllocation.maxExecutors": "100"
-    # spark.dynamicAllocation.executorIdleTimeout": "10s"
+    spark.dynamicAllocation.executorIdleTimeout": "5s"
     # spark.dynamicAllocation.schedulerBacklogTimeout": "5s"
     # spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "5s"
-    # spark.dynamicAllocation.shuffleTracking.enabled: "true"
-    spark.sql.adaptive.localShuffleReader.enabled: "true"
-    # # RSS
-    # spark.celeborn.shuffle.chunk.size: "4m"
-    # spark.celeborn.client.push.maxReqsInFlight: "128"
-    # spark.celeborn.rpc.askTimeout: "240s"
-    # spark.celeborn.client.push.replicate.enabled: "true"
-    # spark.celeborn.client.push.blacklist.enabled: "true"
-    # spark.celeborn.client.push.excludeWorkerOnFailure.enabled: "true"
-    # spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled: "true"
-    # spark.celeborn.client.commitFiles.ignoreExcludedWorker": "true"
-    # spark.sql.optimizedUnsafeRowSerializers.enabled: "false"
-    # spark.shuffle.manager: "org.apache.spark.shuffle.celeborn.SparkShuffleManager"
-    # spark.shuffle.sort.io.plugin.class: "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO"
-    # spark.celeborn.master.endpoints: "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
+    spark.dynamicAllocation.shuffleTracking.enabled: "false"
+    spark.sql.adaptive.localShuffleReader.enabled: "false"
+    # RSS
+    spark.celeborn.shuffle.chunk.size: "4m"
+    spark.celeborn.client.push.maxReqsInFlight: "128"
+    spark.celeborn.rpc.askTimeout: "240s"
+    spark.celeborn.client.push.replicate.enabled: "true"
+    spark.celeborn.client.push.blacklist.enabled: "true"
+    spark.celeborn.client.push.excludeWorkerOnFailure.enabled: "true"
+    spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled: "true"
+    spark.celeborn.client.commitFiles.ignoreExcludedWorker": "true"
+    spark.sql.optimizedUnsafeRowSerializers.enabled: "false"
+    spark.shuffle.manager: "org.apache.spark.shuffle.celeborn.SparkShuffleManager"
+    spark.shuffle.sort.io.plugin.class: "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO"
+    spark.celeborn.master.endpoints: "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
   # # Grafana monitoring
   #   spark.metrics.appStatusSource.enabled: "true"
   #   spark.ui.prometheus.enabled: "true"
@@ -121,7 +121,7 @@ spec:
     cores: 4
     memory: 6g
     memoryOverhead: 2g
-    serviceAccount: emr-containers-sa-spark
+    # serviceAccount: emr-containers-sa-spark
     # instances: 47
   restartPolicy:
     type: Never

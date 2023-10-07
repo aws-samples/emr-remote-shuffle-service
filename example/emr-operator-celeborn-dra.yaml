@@ -65,8 +65,8 @@ spec:
     # spark.dynamicAllocation.minExecutors": "1"
     # spark.dynamicAllocation.maxExecutors": "100"
     spark.dynamicAllocation.executorIdleTimeout": "5s"
-    # spark.dynamicAllocation.schedulerBacklogTimeout": "5s"
-    # spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "5s"
+    spark.dynamicAllocation.schedulerBacklogTimeout": "5s"
+    spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "5s"
     spark.dynamicAllocation.shuffleTracking.enabled: "false"
     spark.sql.adaptive.localShuffleReader.enabled: "false"
     # RSS

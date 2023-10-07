@@ -21,7 +21,7 @@ metadata:
 spec:
   type: Scala
   sparkVersion: 3.3.1
-  mode: cluster
+  mode: client
   image: "895885662937.dkr.ecr.us-west-2.amazonaws.com/spark/emr-6.10.0:latest"
   imagePullPolicy: Always
   mainClass: org.apache.spark.examples.SparkPi

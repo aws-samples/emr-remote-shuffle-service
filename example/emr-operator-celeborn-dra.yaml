@@ -46,10 +46,10 @@ spec:
     fs.s3.getObject.initialSocketTimeoutMilliseconds: "2000"
     mapreduce.fileoutputcommitter.algorithm.version.emr_internal_use_only.EmrFileSystem: "2"
     mapreduce.fileoutputcommitter.cleanup-failures.ignored.emr_internal_use_only.EmrFileSystem: "true"
-  dynamicAllocation:
-    enabled: true
-    minExecutors: 1
-    # maxExecutors: 100
+  # dynamicAllocation:
+  #   enabled: true
+  #   minExecutors: 1
+  #   maxExecutors: 100
   sparkConf:
     # genernal
     # spark.eventLog.enabled: "true"
@@ -61,8 +61,8 @@ spec:
     spark.kubernetes.driver.pod.name: "emr-eks-operator"
     spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup: "c59a"
     # DRA
-    # spark.dynamicAllocation.enabled": "true"
-    # spark.dynamicAllocation.minExecutors": "1"
+    spark.dynamicAllocation.enabled: "true"
+    spark.dynamicAllocation.minExecutors": "1"
     # spark.dynamicAllocation.maxExecutors": "100"
     spark.dynamicAllocation.executorIdleTimeout": "5s"
     spark.dynamicAllocation.schedulerBacklogTimeout": "5s"

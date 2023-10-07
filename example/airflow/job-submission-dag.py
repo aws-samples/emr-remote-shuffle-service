@@ -27,7 +27,7 @@ submit = SparkKubernetesOperator(
    namespace="spark-operator",
    trigger_rule="all_success",
    depends_on_past=False,
-   kubernetes_conn_id="myk8s",
+   kubernetes_conn_id="kubernetes_default",
    api_group="sparkoperator.k8s.io",
    api_version="v1beta2",
    do_xcom_push=True,
@@ -37,7 +37,7 @@ sensor = SparkKubernetesSensor(
     task_id='task_monitor',
     namespace="spark-operator",
     application_name="{{ task_instance.xcom_pull(task_ids='emr_spark_operator')['metadata']['name'] }}",
-    kubernetes_conn_id="myk8s",
+    kubernetes_conn_id="kubernetes_default",
     dag=dag,
     api_group="sparkoperator.k8s.io",
     attach_log=True

@@ -17,7 +17,7 @@ export JOB_TEMPLATE_ID=$(aws emr-containers list-job-templates --query "template
 
 aws emr-containers start-job-run \
 --virtual-cluster-id $VIRTUAL_CLUSTER_ID \
---name emr7-track-defaultdra-norss-5stimeout-5backog-cost  \
+--name emr7-track-norss-asg50-5stimeout  \
 --job-template-id $JOB_TEMPLATE_ID \
 --job-template-parameters '{
     "EmrRoleARN": "'$EMR_ROLE_ARN'",

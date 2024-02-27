@@ -6,7 +6,7 @@
         "jobDriver": {
             "sparkSubmitJobDriver": { 
                 "entryPoint": "local:///usr/lib/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar",
-                "entryPointArguments":["${InputDataLocation}","${OutputDataLocation}","/opt/tpcds-kit/tools","parquet","3000","1","false","${QueryList}","true"],
+                "entryPointArguments":["${DataLocation}","/opt/tpcds-kit/tools","parquet","3000","1","false","${QueryList}","true"],
                 "sparkSubmitParameters": "--class com.amazonaws.eks.tpcds.BenchmarkSQL --conf spark.driver.cores=2 --conf spark.driver.memory=3g --conf spark.executor.cores=4 --conf spark.executor.memory=6g"
             }
         },
@@ -83,10 +83,7 @@
             "EmrRoleARN":{
                 "type": "STRING"
             },
-            "InputDataLocation":{
-                "type": "STRING"
-            },
-            "OutputDataLocation":{
+            "DataLocation":{
                 "type": "STRING"
             },
             "PodNamePrefix": {

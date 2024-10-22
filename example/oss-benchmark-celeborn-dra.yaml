@@ -47,7 +47,6 @@ spec:
     "spark.sql.adaptive.localShuffleReader.enabled": "false"
     "spark.shuffle.service.enabled": "false"
     "spark.dynamicAllocation.enabled": "true"
-    "spark.dynamicAllocation.shuffleTracking.enabled": "false"
     "spark.dynamicAllocation.minExecutors": "1"
     "spark.dynamicAllocation.maxExecutors": "100"
     "spark.dynamicAllocation.executorIdleTimeout": "30s"

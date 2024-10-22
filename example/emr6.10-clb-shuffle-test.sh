@@ -41,7 +41,6 @@ aws emr-containers start-job-run \
           "spark.dynamicAllocation.maxExecutors": "96",
           "spark.dynamicAllocation.minExecutors": "1"
           "spark.dynamicAllocation.executorIdleTimeout": "10s",
-          "spark.dynamicAllocation.shuffleTracking.enabled": "false",
           "spark.sql.adaptive.localShuffleReader.enabled":"false",
 
           "spark.celeborn.shuffle.chunk.size": "4m",
@@ -53,9 +52,12 @@ aws emr-containers start-job-run \
           "spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled": "true",
           "spark.celeborn.client.commitFiles.ignoreExcludedWorker": "true",
           "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.SparkShuffleManager",
-          "spark.shuffle.sort.io.plugin.class": "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO",
           "spark.celeborn.master.endpoints": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097",
           "spark.sql.optimizedUnsafeRowSerializers.enabled":"false"
+          
+          # NOTE: only set the following 2 for Spark 3.5+ to turn off the shuffle tracking
+          "spark.shuffle.sort.io.plugin.class": "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO",
+          "spark.dynamicAllocation.shuffleTracking.enabled": "false"
       }},
       {
         "classification": "spark-log4j",

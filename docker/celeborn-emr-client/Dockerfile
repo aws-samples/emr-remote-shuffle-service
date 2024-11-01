@@ -1,17 +1,16 @@
 # // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # // SPDX-License-Identifier: MIT-0
-ARG SPARK_BASE_IMAGE=431565497552.dkr.ecr.us-west-2.amazonaws.com/spark/emr-6.100.2-java17:latest
-# ARG SPARK_BASE_IMAGE=755674844232.dkr.ecr.us-east-1.amazonaws.com/spark/emr-6.6.0:latest
+ARG SPARK_BASE_IMAGE=public.ecr.aws/emr-on-eks/spark/emr-6.10.0:latest
 ARG java_image_tag=8-jdk-focal
 
 FROM eclipse-temurin:${java_image_tag} as cele-client
-ARG SPARK_VERSION=3.2
+ARG SPARK_VERSION=3.3
+ARG CELEBORN_VERSION=0.4
 
 # install maven
 RUN apt-get update && apt-get install -y git
 # build celeborn binary
-RUN git clone https://github.com/apache/incubator-celeborn.git
-# RUN git clone https://github.com/apache/incubator-celeborn.git -b v0.3.0-incubating
+RUN git clone https://github.com/apache/celeborn.git -b branch-${CELEBORN_VERSION}
 WORKDIR incubator-celeborn
 RUN ./build/make-distribution.sh -Pspark-${SPARK_VERSION} && \
     cat *.tgz | tar -xvzf - && \
@@ -19,7 +18,7 @@ RUN ./build/make-distribution.sh -Pspark-${SPARK_VERSION} && \
 
 FROM mozilla/sbt:8u292_1.5.4 as sbt
 # Build the Databricks SQL perf library
-RUN git clone -b spark-3.2.0 --single-branch https://github.com/aws-samples/emr-on-eks-benchmark.git /tmp/emr-on-eks-benchmark \
+RUN git clone https://github.com/aws-samples/emr-on-eks-benchmark.git /tmp/emr-on-eks-benchmark \
     && cd /tmp/emr-on-eks-benchmark/spark-sql-perf/ \
     && sbt +package   
      

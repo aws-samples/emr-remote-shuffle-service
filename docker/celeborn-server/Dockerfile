@@ -22,9 +22,9 @@ ARG SPARK_VERSION=3.2
 
 RUN apt-get update && apt-get install -y git
 # build celeborn binary
-RUN git clone https://github.com/apache/incubator-celeborn.git -b v0.3.0-incubating
-# RUN git clone https://github.com/apache/incubator-celeborn.git -b branch-${CELEBORN_VERSION}
-WORKDIR incubator-celeborn
+# RUN git clone https://github.com/apache/incubator-celeborn.git -b v0.3.0-incubating
+RUN git clone https://github.com/apache/celeborn.git -b branch-${CELEBORN_VERSION}
+WORKDIR celeborn
 RUN ./build/make-distribution.sh -Pspark-${SPARK_VERSION} && \
     cat *.tgz | tar -xvzf - && \
     mv apache-celeborn-*-bin /opt/celeborn

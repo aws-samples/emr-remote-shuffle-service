@@ -33,7 +33,8 @@
                   "spark.dynamicAllocation.executorIdleTimeout": "${DRA_executorIdleTimeout}",
                   "spark.dynamicAllocation.schedulerBacklogTimeout": "5s",
                   "spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "5s",
-
+                  "spark.dynamicAllocation.executorAllocationRatio": "0.5",
+                  
                   "spark.metrics.appStatusSource.enabled":"true",
                   "spark.ui.prometheus.enabled":"true",
                   "spark.executor.processTreeMetrics.enabled":"true",

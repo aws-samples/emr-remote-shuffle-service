@@ -17,15 +17,17 @@
 
 ARG java_image_tag=8-jdk-focal
 
-FROM eclipse-temurin:${java_image_tag} as jdk
-ARG SPARK_VERSION=3.2
+FROM eclipse-temurin:${java_image_tag} AS jdk
+ARG SPARK_VERSION=3.3
+ARG JDK_VERSION=8
+ARG CELEBORN_VERSION=0.4
 
 RUN apt-get update && apt-get install -y git
 # build celeborn binary
 # RUN git clone https://github.com/apache/incubator-celeborn.git -b v0.3.0-incubating
 RUN git clone https://github.com/apache/celeborn.git -b branch-${CELEBORN_VERSION}
 WORKDIR celeborn
-RUN ./build/make-distribution.sh -Pspark-${SPARK_VERSION} && \
+RUN ./build/make-distribution.sh -Pspark-${SPARK_VERSION} -Pjdk-${JDK_VERSION} && \
     cat *.tgz | tar -xvzf - && \
     mv apache-celeborn-*-bin /opt/celeborn
 

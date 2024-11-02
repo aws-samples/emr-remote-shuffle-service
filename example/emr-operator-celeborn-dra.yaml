@@ -13,9 +13,9 @@ spec:
   type: Scala
   # mode: cluster
   # EMR optimized runtime image
-  image: 021732063925.dkr.ecr.us-west-2.amazonaws.com/clb-spark-benchmark:emr6.13_clb
+  image: public.ecr.aws/myang-poc/celeborn-rss:emr6.10_clbtest
   imagePullPolicy: Always
-  sparkVersion: 3.5.0
+  sparkVersion: 3.3.1
   mainClass: com.amazonaws.eks.tpcds.BenchmarkSQL
   mainApplicationFile: local:///usr/lib/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar
   arguments:
@@ -67,10 +67,14 @@ spec:
     spark.dynamicAllocation.executorIdleTimeout": "5s"
     spark.dynamicAllocation.schedulerBacklogTimeout": "5s"
     spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "5s"
-    # NOTE: only can disable the tracking for Spark 3.5+, otherwise use the default
-    spark.dynamicAllocation.shuffleTracking.enabled: "false"
+    spark.dynamicAllocation.executorAllocationRatio: "0.5"
+    # NOTE: disable the shuffle tracking for Spark 3.5+, otherwise use the default
+    spark.dynamicAllocation.shuffleTracking.enabled: "true"
     spark.sql.adaptive.localShuffleReader.enabled: "false"
     # RSS
+    spark.shuffle.service.enabled: "true"
+    spark.shuffle.manager: "org.apache.spark.shuffle.celeborn.SparkShuffleManager"
+    spark.celeborn.master.endpoints: "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
     spark.celeborn.shuffle.chunk.size: "4m"
     spark.celeborn.client.push.maxReqsInFlight: "128"
     spark.celeborn.rpc.askTimeout: "240s"
@@ -80,10 +84,9 @@ spec:
     spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled: "true"
     spark.celeborn.client.commitFiles.ignoreExcludedWorker": "true"
     spark.sql.optimizedUnsafeRowSerializers.enabled: "false"
-    spark.shuffle.manager: "org.apache.spark.shuffle.celeborn.SparkShuffleManager"
-    # NOTE: only set the sort io plugin for Spark 3.5+
-    spark.shuffle.sort.io.plugin.class: "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO"
-    spark.celeborn.master.endpoints: "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
+    # NOTE: only need to set the sort io plugin for Spark 3.5+
+    # spark.shuffle.sort.io.plugin.class: "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO"
+    
   # # Grafana monitoring
   #   spark.metrics.appStatusSource.enabled: "true"
   #   spark.ui.prometheus.enabled: "true"

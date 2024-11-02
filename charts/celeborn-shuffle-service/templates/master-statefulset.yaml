@@ -48,7 +48,7 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
         app.kubernetes.io/role: master
-        app.kubernetes.io/tag: {{ .Values.image.tag }}
+        app.kubernetes.io/tag: {{ .Values.image.tag | quote }}
         {{- include "celeborn.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.affinity.master }}
@@ -66,6 +66,9 @@ spec:
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if or .Values.priorityClass.master.name .Values.priorityClass.master.create }}
+      priorityClassName: {{ .Values.priorityClass.master.name | default (printf "%s-master-priority" (.Release.Name)) }}
       {{- end }}
       {{- with .Values.securityContext }}
       securityContext:
@@ -85,6 +88,8 @@ spec:
         - chown
         - {{ .Values.securityContext.runAsUser | default 10006 }}:{{ .Values.securityContext.runAsGroup | default 10006 }}
         - {{ (index $dirs 0).mountPath }}
+        resources:
+          {{- toYaml .Values.resources.master | nindent 12 }}
         volumeMounts:
           - name: {{ $.Release.Name }}-master-vol-0
             mountPath: {{ (index $dirs 0).mountPath }}
@@ -104,7 +109,7 @@ spec:
           {{- toYaml .Values.resources.master | nindent 12 }}
         ports:
           - containerPort: {{ .Values.service.port }}
-          - containerPort: {{ get .Values.celeborn "celeborn.master.metrics.prometheus.port" | default 9098 }}
+          - containerPort: {{ get .Values.celeborn "celeborn.master.http.port" | default 9098 }}
             name: metrics
             protocol: TCP
         volumeMounts:
@@ -120,7 +125,7 @@ spec:
           - name: {{ $key }}
             value: {{ $val | quote }}
           {{- end}}
-      terminationGracePeriodSeconds: 30 
+      terminationGracePeriodSeconds: 30
       volumes:
         - configMap:
             name: {{ .Release.Name }}-conf

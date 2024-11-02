@@ -8,7 +8,7 @@
 # export AWS_REGION=us-east-1
 export EMR_NAMESPACE=emr
 export OSS_NAMESPACE=oss
-export EKS_VERSION=1.26
+export EKS_VERSION=1.30
 export EMRCLUSTER_NAME=emr-on-$EKSCLUSTER_NAME
 export ROLE_NAME=${EMRCLUSTER_NAME}-execution-role
 export ACCOUNTID=$(aws sts get-caller-identity --query Account --output text)
@@ -235,15 +235,17 @@ autoDiscovery:
     clusterName: $EKSCLUSTER_NAME
 awsRegion: $AWS_REGION
 image:
-    tag: v1.26.3
+    tag: v1.30.0
 nodeSelector:
-    app: rss    
+    app: rss
 podAnnotations:
     cluster-autoscaler.kubernetes.io/safe-to-evict: 'false'
 extraArgs:
     skip-nodes-with-system-pods: false
     scale-down-unneeded-time: 1m
     scale-down-unready-time: 2m
+    kube-client-qps: 100
+    kube-client-burst: 200
 rbac:
     serviceAccount:
         create: false

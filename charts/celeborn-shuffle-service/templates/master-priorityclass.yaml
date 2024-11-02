@@ -15,10 +15,11 @@
 # limitations under the License.
 #
 
-apiVersion: v1
-kind: Service
+{{- if .Values.priorityClass.master.create }}
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
 metadata:
-  name: {{ .Release.Name }}-master-svc
+  name: {{ .Values.priorityClass.master.name | default (printf "%s-master-priority" (.Release.Name)) }}
   labels:
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     app.kubernetes.io/name: {{ .Chart.Name }}
@@ -26,16 +27,5 @@ metadata:
     app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     {{- include "celeborn.labels" . | nindent 4 }}
-spec:
-  type: {{ .Values.service.type }}
-  ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.port }}
-      protocol: TCP
-      name: celeborn-master
-  clusterIP: None
-  selector:
-    app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-    app.kubernetes.io/role: master
-    {{- include "celeborn.selectorLabels" . | nindent 4 }}
+value: {{ .Values.priorityClass.master.value }}
+{{- end }}

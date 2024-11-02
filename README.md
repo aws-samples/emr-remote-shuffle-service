@@ -33,15 +33,11 @@ The shell script provides a one-click experience to create an EMR on EKS environ
 
 ## Enable Remote Shuffle Server (RSS)
 
-Apache Celeborn supports Spark 2.4/3.0/3.1/3.2/3.3/3.4/3.5 and flink 1.14/1.15/1.17. The test was done under Java 8 environment only. However, you can compile the project based on Java 11 or Java 17. The only changes need to be done are:
-**pom.xml**
+Apache Celeborn supports Spark 2.4/3.0/3.1/3.2/3.3/3.4/3.5 and flink 1.14/1.15/1.17. The test was done under the default Java 8 environment. However, you can compile the RSS project based on other Java versions. For example:
+
 ```bash
--    <java.version>8</java.version>
-+    <java.version>17</java.version>
+./build/make-distribution.sh -Pspark-3.5 -Pjdk-21
 ```
-Then set correct `JAVA_HOME` for both Celeborn server and client: `export JAVA_HOME=/usr/lib/jvm/YOUR_JAVA_VERSION`
-
-
 There are 2 options to host the RSS server:
 
 ### 1. Install Apache Celeborn on EKS
@@ -72,15 +68,16 @@ aws ecr create-repository --repository-name clb-spark-benchmark \
 
 ```bash
 # Build & push server & client docker images
-JAVA_TAG=8-jdk  #17-jdk
+JDK_VERSION=8  #17
 SPARK_VERSION=3.3
 # build server
-docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION}_${JAVA_TAG} \
+docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION}_jdk${JDK_VERSION} \
   --build-arg SPARK_VERSION=${SPARK_VERSION} \
-  --build-arg java_image_tag=${JAVA_TAG}-focal \
+  --build-arg JDK_VERSION=${JDK_VERSION} \
+  --build-arg java_image_tag=${JDK_VERSION}-jdk-focal \
   -f docker/celeborn-server/Dockerfile .
 # push the image to ECR
-docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}_${JAVA_TAG}
+docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}_jdk${JDK_VERSION}
 ```
 
 Alternatively, we can build a single multi-arch docker image (x86_64 and arm64) by the following steps:
@@ -91,29 +88,31 @@ docker buildx version
 # (once-off task) create a new builder that gives access to the new multi-architecture features
 docker buildx create --name mybuilder --use
 # build and push the custom image supporting multi-platform
-JAVA_TAG=8-jdk
+JDK_VERSION=8  #17
 SPARK_VERSION=3.3
 docker buildx build \
 --platform linux/amd64,linux/arm64 \
--t $ECR_URL/celeborn-server:spark${SPARK_VERSION}_${JAVA_TAG} \
+-t $ECR_URL/celeborn-server:spark${SPARK_VERSION}_jdk${JDK_VERSION} \
 --build-arg SPARK_VERSION=${SPARK_VERSION} \
---build-arg java_image_tag=${JAVA_TAG}-focal \
+--build-arg JDK_VERSION=${JDK_VERSION} \
+--build-arg java_image_tag=${JDK_VERSION}-jdk-focal \
 -f docker/celeborn-server/Dockerfile \
 --push .
 ```
 
 ```bash
 # build client for EMR on EKS
-JAVA_TAG=8-jdk
-SPARK_VERSION=3.3
+JDK_VERSION=8  #17
+SPARK_VERSION=3.5
 EMR_VERSION=emr-6.10.0
 SRC_ECR_URL=755674844232.dkr.ecr.us-east-1.amazonaws.com
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $SRC_ECR_URL
 
 docker build -t $ECR_URL/clb-spark-benchmark:${EMR_VERSION}_clb \
   --build-arg SPARK_VERSION=${SPARK_VERSION} \
+  --build-arg JDK_VERSION=${JDK_VERSION} \
   --build-arg SPARK_BASE_IMAGE=${SRC_ECR_URL}/spark/${EMR_VERSION}:latest \
-  --build-arg java_image_tag=${JAVA_TAG}-focal \
+  --build-arg java_image_tag=${JDK_VERSION}-jdk-focal \
   -f docker/celeborn-emr-client/Dockerfile .
 
 docker push $ECR_URL/clb-spark-benchmark:${EMR_VERSION}_clb
@@ -121,8 +120,7 @@ docker push $ECR_URL/clb-spark-benchmark:${EMR_VERSION}_clb
 
 ```bash
 # build client for OSS Spark
-# SPARK_BASE_IMAGE=public.ecr.aws/myang-poc/spark:3.3.1_hadoop_3.3.1
-SPARK_BASE_IMAGE=633458367150.dkr.ecr.us-west-2.amazonaws.com/spark:3.3.2_hadoop_3.3.3_dra
+SPARK_BASE_IMAGE=public.ecr.aws/myang-poc/spark:3.3.1_hadoop_3.3.3
 SPARK_VERSION=3.3
 ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 docker build -t $ECR_URL/clb-spark-benchmark:spark${SPARK_VERSION}_client \
@@ -180,23 +178,67 @@ vi charts/celeborn-shuffle-service/values.yaml
 ```bash
 # install celeborn
 helm install celeborn charts/celeborn-shuffle-service  -n celeborn --create-namespace
-# check progress
-kubectl get all -n celeborn
-# check if all workers are registered on a single master node.
+```
+<details>
+<summary>OPTIONAL: validate after the RSS installation</summary>
+
+Check Celeborn pods' status:
+
+```bash
+>> kubectl get all -n celeborn
+NAME                    READY   STATUS    RESTARTS   AGE
+pod/celeborn-master-0   1/1     Running   0          20m
+pod/celeborn-master-1   1/1     Running   0          20m
+pod/celeborn-master-2   1/1     Running   0          2m28s
+pod/celeborn-worker-0   1/1     Running   0          20m
+pod/celeborn-worker-1   1/1     Running   0          20m
+pod/celeborn-worker-2   1/1     Running   0          17m
+```
+Ensure all workers are up running and are registered to a single master node.
+In this case, all workers were registered with "master-1".
+
+```bash
 kubectl logs celeborn-master-0 -n celeborn | grep Registered
 kubectl logs celeborn-master-1 -n celeborn | grep Registered
 kubectl logs celeborn-master-2 -n celeborn | grep Registered
+```
+```bash
+>> kubectl logs celeborn-master-1 -n celeborn | grep Registered
+Defaulted container "celeborn" out of: celeborn, chown-celeborn-master-volume (init)
+24/11/02 02:03:33,176 INFO [celeborn-dispatcher-3] Master: Registered worker 
+24/11/02 02:03:33,856 INFO [celeborn-dispatcher-0] Master: Registered worker 
+24/11/02 02:03:33,905 INFO [celeborn-dispatcher-2] Master: Registered worker 
+```
+Check if multiple disks were mounted to the worker node correctly
 
-# OPTIONAL: only if prometheus operator is installed
-kubectl get podmonitor -n celeborn
+```bash
+>> kubectl exec -it celeborn-worker-1 -n celeborn -- df -h
+Defaulted container "celeborn" out of: celeborn, chown-celeborn-worker-volume (init)
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          20G  4.1G   16G  21% /
+tmpfs            64M     0   64M   0% /dev
+tmpfs            94G     0   94G   0% /sys/fs/cgroup
+/dev/nvme1n1    6.9T   49G  6.8T   1% /rss1/disk1
+/dev/nvme2n1    6.9T   49G  6.8T   1% /rss2/disk2
+/dev/nvme0n1p1   20G  4.1G   16G  21% /etc/hosts
+shm              64M     0   64M   0% /dev/shm
+tmpfs           184G   12K  184G   1% /run/secrets/kubernetes.io/serviceaccount
+tmpfs            94G     0   94G   0% /proc/acpi
+tmpfs            94G     0   94G   0% /sys/firmware
 ```
 
 ```bash
-# scale worker or master
+# OPTIONAL: only if prometheus operator is installed
+kubectl get podmonitor -n celeborn
+```
+</details>
+
+```bash
+# scale worker or master if needed
 kubectl scale statefulsets celeborn-worker -n celeborn  --replicas=5
 kubectl scale statefulsets celeborn-master -n celeborn  --replicas=1
 
-# uninstall celeborn
+# uninstall celeborn if needed
 helm uninstall celeborn -n celeborn
 ```
 ### 2. Install Apache Celeborn on EC2
@@ -458,9 +500,11 @@ export AWS_REGION=<YOUR_REGION:us-west-2>
 aws emr-containers create-job-template --cli-input-json file://example/pod-template/clb-dra-job-template.json
 aws emr-containers create-job-template --cli-input-json file://example/pod-template/dra-tracking-job-template.json
 
-# Run TPCDS test with RSS & DRA enabled - against c59a nodegroup
-./example/emr6.10-benchmark-celeborn.sh
-# RUN EMR on EKS with DRA and shuffle tracking on, but without RSS - against c5d9a nodegroup
+# Example 1: Without a patch for DRA in Spark 3.3, run TPCDS test with RSS+DRA against c59a nodegroup
+./example/emr6.10-benchmark-celeborn_track.sh
+# Example 2: Without shuffle tracking in Spark3.5+, run TPCDS test with RSS+DRA
+./example/emr7.0-benchmark-celeborn_notrack.sh
+# Example 3: Without RSS, run a normal EMR on EKS job with DRA on - against c5d9a nodegroup. Expect Data Loss.
 ./example/emr6.10-benchmark-emr.sh
 # check job progress
 kubectl get po -n emr

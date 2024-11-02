@@ -10,9 +10,9 @@ spec:
     app: sparktest
   type: Scala
   mode: cluster
-  image: 633458367150.dkr.ecr.us-west-2.amazonaws.com/clb-spark-benchmark:3.0_spark3.3_client_dra
+  image: public.ecr.aws/myang-poc/celeborn-rss:spark3.3_8-jdk
   imagePullPolicy: Always
-  sparkVersion: 3.3.2
+  sparkVersion: 3.3.1
   mainClass: com.amazonaws.eks.tpcds.BenchmarkSQL
   mainApplicationFile: local:///opt/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar
   arguments:
@@ -45,22 +45,25 @@ spec:
     "spark.sql.adaptive.skewJoin.enabled": "true"
     # DRA
     "spark.sql.adaptive.localShuffleReader.enabled": "false"
-    "spark.shuffle.service.enabled": "false"
     "spark.dynamicAllocation.enabled": "true"
     "spark.dynamicAllocation.minExecutors": "1"
     "spark.dynamicAllocation.maxExecutors": "100"
     "spark.dynamicAllocation.executorIdleTimeout": "30s"
     "spark.dynamicAllocation.schedulerBacklogTimeout": "30s"
     "spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "5s"
-    # RSS
+    # Remote shuffle 
+    spark.shuffle.service.enabled: "true"
+    spark.shuffle.manager: "org.apache.spark.shuffle.celeborn.SparkShuffleManager"
+    spark.celeborn.master.endpoints: "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
+    spark.sql.optimizedUnsafeRowSerializers.enabled: "false"
+    # NOTE: only need to set the sort io plugin for Spark 3.5+
+    # spark.shuffle.sort.io.plugin.class: "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO"
     "spark.celeborn.shuffle.chunk.size": "4m"
     "spark.celeborn.push.maxReqsInFlight": "128"
     "spark.celeborn.client.push.replicate.enabled": "true"
     "spark.celeborn.client.push.excludeWorkerOnFailure.enabled": "true"
     "spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled": "true"
     "spark.celeborn.client.commitFiles.ignoreExcludedWorker": "true"
-    "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.RssShuffleManager"
-    "spark.celeborn.master.endpoints": "clbv3-master-0.clbv3-master-svc.celeborn:9097,clbv3-master-1.clbv3-master-svc.celeborn:9097,clbv3-master-2.clbv3-master-svc.celeborn:9097"
     # IRSA
     "spark.hadoop.fs.s3a.aws.credentials.provider": "com.amazonaws.auth.WebIdentityTokenCredentialsProvider"
     "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"

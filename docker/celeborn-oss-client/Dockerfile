@@ -1,9 +1,11 @@
 # // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # // SPDX-License-Identifier: MIT-0
-ARG SPARK_BASE_IMAGE=public.ecr.aws/myang-poc/spark:3.2.0_hadoop_3.3.1
+ARG SPARK_BASE_IMAGE=public.ecr.aws/myang-poc/spark:3.3.1_hadoop_3.3.3
 
-FROM openjdk:8-jdk-slim as rss-client
-ARG SPARK_VERSION=3.2
+FROM openjdk:8-jdk-slim AS rss-client
+ARG SPARK_VERSION=3.3
+ARG CELEBORN_VERSION=0.4
+ARG JDK_VERSION=8
 
 # install maven
 ENV MAVEN_VERSION=3.8.8
@@ -19,14 +21,13 @@ RUN apt-get update && apt-get install -y curl git tar zlib1g zlib1g-dev lzop lso
 ENV MAVEN_HOME /usr/share/maven
 ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
 # build celeborn binary
-# RUN git clone https://github.com/apache/incubator-celeborn.git -b branch-${CELEBORN_VERSION}
-RUN git clone https://github.com/apache/incubator-celeborn.git
-WORKDIR incubator-celeborn
-RUN ./build/make-distribution.sh -Pspark-${SPARK_VERSION} && \
+RUN git clone https://github.com/apache/celeborn.git -b branch-${CELEBORN_VERSION}
+WORKDIR celeborn
+RUN ./build/make-distribution.sh -Pspark-${SPARK_VERSION} -Pjdk-${JDK_VERSION} && \
     cat *.tgz | tar -xvzf - && \
-    mv apache-celeborn-*-bin /tmp/celeborn
+    mv apache-celeborn-*-bin /opt/celeborn
 
-FROM mozilla/sbt:8u292_1.5.4 as sbt
+FROM mozilla/sbt:8u292_1.5.4 AS sbt
 ENV SPARK_VERSION=3.2.0
 # Build the Databricks SQL perf library
 RUN git clone -b spark-${SPARK_VERSION} --single-branch https://github.com/aws-samples/emr-on-eks-benchmark.git /tmp/emr-on-eks-benchmark \
@@ -39,26 +40,9 @@ RUN cd /tmp/emr-on-eks-benchmark/ && mkdir /tmp/emr-on-eks-benchmark/benchmark/l
 
 FROM ${SPARK_BASE_IMAGE}
 USER root
-# ENV HADOOP_VERSION=3.3.1
-
-# # Download Hadoop
-# ADD http://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz .
-# # Unzip Hadoop
-# RUN tar -xvzf hadoop-${HADOOP_VERSION}.tar.gz
-# RUN mv hadoop-${HADOOP_VERSION} /opt/hadoop
-# RUN rm -rf hadoop/share/doc
 
 COPY --from=rss-client /tmp/celeborn/spark  ${SPARK_HOME}/jars
 COPY --from=sbt /tmp/emr-on-eks-benchmark/benchmark/target/scala-2.12/*jar ${SPARK_HOME}/examples/jars/
-
-# ENV HADOOP_HOME /opt/hadoop
-# ENV SPARK_DIST_CLASSPATH="$HADOOP_HOME/etc/hadoop:$HADOOP_HOME/share/hadoop/common/lib/*:$HADOOP_HOME/share/hadoop/common/*:$HADOOP_HOME/share/hadoop/hdfs:$HADOOP_HOME/share/hadoop/hdfs/lib/*:$HADOOP_HOME/share/hadoop/hdfs/*:$HADOOP_HOME/share/hadoop/yarn:$HADOOP_HOME/share/hadoop/yarn/lib/*:$HADOOP_HOME/share/hadoop/yarn/*:$HADOOP_HOME/share/hadoop/mapreduce/lib/*:$HADOOP_HOME/share/hadoop/mapreduce/*:/contrib/capacity-scheduler/*.jar:$HADOOP_HOME/share/hadoop/tools/lib/*"
-# # Create a Hadoop user/group
-# RUN addgroup -gid 1000 hadoop && \
-# useradd -u 1000 -g hadoop -m -s /bin/sh hadoop && \
-# echo "hadoop:hadoop" | chpasswd
-# USER hadoop:hadoop
-# ENV SPARK_USER hadoop
 
 WORKDIR /home/hadoop   
 # Use hadoop user and group 

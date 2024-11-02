@@ -10,7 +10,7 @@ spec:
     app: sparktest
   type: Scala
   mode: cluster
-  image: public.ecr.aws/myang-poc/benchmark:oss-3.3.1
+  image:public.ecr.aws/myang-poc/celeborn-rss:spark3.3_8-jdk
   imagePullPolicy: Always
   sparkVersion: 3.3.1
   mainClass: com.amazonaws.eks.tpcds.BenchmarkSQL
@@ -42,11 +42,12 @@ spec:
     "spark.sql.adaptive.enabled": "true"
     "spark.sql.adaptive.coalescePartitions.enabled": "true"
     "spark.sql.adaptive.skewJoin.enabled": "true"
-    # DRA 
+    #shuffle 
+    "spark.dynamicAllocation.shuffleTracking.enabled": "true"
     "spark.sql.adaptive.localShuffleReader.enabled": "true"
     "spark.shuffle.service.enabled": "false"
+    # DRA
     "spark.dynamicAllocation.enabled": "true"
-    "spark.dynamicAllocation.shuffleTracking.enabled": "true"
     "spark.dynamicAllocation.minExecutors": "1"
     "spark.dynamicAllocation.maxExecutors": "100"
     "spark.dynamicAllocation.executorIdleTimeout": "30s"

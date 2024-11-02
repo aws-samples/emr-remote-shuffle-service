@@ -23,27 +23,27 @@
                   "spark.driver.memoryOverhead": "1000",
                   "spark.executor.memoryOverhead": "2G",
 
-                  "spark.shuffle.service.enabled": "false",
-                  "spark.dynamicAllocation.enabled": "${DRA_enabled}",
+                  "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
+                  "spark.sql.adaptive.enabled": "true",
+                  "spark.shuffle.service.enabled": "true",
                   "spark.dynamicAllocation.shuffleTracking.enabled": "${DRA_shuffleTracking}",
+                  
+                  "spark.dynamicAllocation.enabled": "${DRA_enabled}",
                   "spark.sql.adaptive.localShuffleReader.enabled":"${AQE_localShuffleReader}",
                   "spark.dynamicAllocation.minExecutors": "1",
                   "spark.dynamicAllocation.executorIdleTimeout": "${DRA_executorIdleTimeout}",
                   "spark.dynamicAllocation.schedulerBacklogTimeout": "5s",
                   "spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "5s",
+                  "spark.dynamicAllocation.executorAllocationRatio": "0.5",
 
+                  "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.SparkShuffleManager",
+                  "spark.celeborn.master.endpoints": "192.168.12.137:9097,192.168.18.183:9097,192.168.23.132:9097",
+                  "spark.shuffle.sort.io.plugin.class": "${RSS_shuffle_io}",
+                  "spark.celeborn.client.spark.push.unsafeRow.fastWrite.enabled": "false",
                   "spark.celeborn.shuffle.chunk.size": "4m",
                   "spark.celeborn.client.push.maxReqsInFlight": "128",
-                  "spark.celeborn.rpc.askTimeout": "2000s",
-                  "spark.celeborn.client.push.replicate.enabled": "true",
-                  "spark.celeborn.client.push.excludeWorkerOnFailure.enabled": "true",
-                  "spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled": "true",
-                  "spark.celeborn.client.commitFiles.ignoreExcludedWorker": "true",
-                  "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.SparkShuffleManager",
-                  "spark.shuffle.sort.io.plugin.class": "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO",
-                  "spark.celeborn.master.endpoints": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097",
-                  "spark.sql.optimizedUnsafeRowSerializers.enabled":"false",
-                  "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
+                  "spark.celeborn.rpc.askTimeout": "240s",
+                  "spark.celeborn.client.push.replicate.enabled": "false",
 
                   "spark.metrics.appStatusSource.enabled":"true",
                   "spark.ui.prometheus.enabled":"true",
@@ -121,6 +121,10 @@
             },
             "LogS3BucketUri": {
                 "type": "STRING"
+            },
+            "RSS_shuffle_io": {
+                "type": "STRING",
+                "defaultValue": "org.apache.spark.shuffle.sort.io.LocalDiskShuffleDataIO"
             }
         }
     }

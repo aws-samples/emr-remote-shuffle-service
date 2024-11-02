@@ -48,7 +48,7 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
         app.kubernetes.io/role: worker
-        app.kubernetes.io/tag: {{ .Values.image.tag }}
+        app.kubernetes.io/tag: {{ .Values.image.tag | quote }}
         {{- include "celeborn.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.affinity.worker }}
@@ -66,6 +66,9 @@ spec:
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if or .Values.priorityClass.worker.name .Values.priorityClass.worker.create }}
+      priorityClassName: {{ .Values.priorityClass.worker.name | default (printf "%s-worker-priority" (.Release.Name)) }}
       {{- end }}
       {{- with .Values.securityContext }}
       securityContext:
@@ -87,6 +90,8 @@ spec:
         {{- range $dir := $dirs }}
         - {{ $dir.mountPath }}
         {{- end}}
+        resources:
+          {{- toYaml .Values.resources.worker | nindent 12 }}
         volumeMounts:
         {{- range $index, $dir := $dirs }}
         - name: {{ $.Release.Name }}-worker-vol-{{ $index }}
@@ -107,15 +112,13 @@ spec:
         resources:
           {{- toYaml .Values.resources.worker | nindent 12 }}
         ports:
-          - containerPort: {{ get .Values.celeborn "celeborn.worker.metrics.prometheus.port" | default 9096 }}
+          - containerPort: {{ get .Values.celeborn "celeborn.worker.http.port" | default 9096 }}
             name: metrics
             protocol: TCP
         volumeMounts:
-          {{- if .Values.configmap }}
           - mountPath: /opt/celeborn/conf
             name: {{ include "celeborn.fullname" . }}-volume
             readOnly: true
-          {{- end }}
           {{- range $index, $volume := .Values.volumes.worker }}
           - name: {{ $.Release.Name }}-worker-vol-{{ $index }}
             mountPath: {{ .mountPath }}

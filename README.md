@@ -103,15 +103,14 @@ docker buildx build \
 ```bash
 # build client for EMR on EKS
 JDK_VERSION=8  #17
-SPARK_VERSION=3.5
+SPARK_VERSION=3.3
 EMR_VERSION=emr-6.10.0
-SRC_ECR_URL=755674844232.dkr.ecr.us-east-1.amazonaws.com
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $SRC_ECR_URL
+aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
 docker build -t $ECR_URL/clb-spark-benchmark:${EMR_VERSION}_clb \
   --build-arg SPARK_VERSION=${SPARK_VERSION} \
   --build-arg JDK_VERSION=${JDK_VERSION} \
-  --build-arg SPARK_BASE_IMAGE=${SRC_ECR_URL}/spark/${EMR_VERSION}:latest \
+  --build-arg SPARK_BASE_IMAGE=public.ecr.aws/emr-on-eks/spark/${EMR_VERSION}:latest \
   --build-arg java_image_tag=${JDK_VERSION}-jdk-focal \
   -f docker/celeborn-emr-client/Dockerfile .
 
@@ -176,8 +175,12 @@ vi charts/celeborn-shuffle-service/values.yaml
 ```
 
 ```bash
-# install celeborn
-helm install celeborn charts/celeborn-shuffle-service  -n celeborn --create-namespace
+# install Celeborn for Spark3.3 (EMR 6.10)
+helm install celeborn charts/celeborn-shuffle-service  -n celeborn \
+--set image.tag=spark3.3_8-jdk --create-namespace 
+# install another Celeborn cluster for Spark3.5(EMR 7.0) if needed
+helm install celeborn-spark3-5 charts/celeborn-shuffle-service  -n celeborn \
+--set image.tag=spark3.5_jdk17 --create-namespace=false
 ```
 <details>
 <summary>OPTIONAL: validate after the RSS installation</summary>
@@ -221,12 +224,16 @@ tmpfs            94G     0   94G   0% /sys/fs/cgroup
 /dev/nvme1n1    6.9T   49G  6.8T   1% /rss1/disk1
 /dev/nvme2n1    6.9T   49G  6.8T   1% /rss2/disk2
 /dev/nvme0n1p1   20G  4.1G   16G  21% /etc/hosts
-shm              64M     0   64M   0% /dev/shm
-tmpfs           184G   12K  184G   1% /run/secrets/kubernetes.io/serviceaccount
-tmpfs            94G     0   94G   0% /proc/acpi
-tmpfs            94G     0   94G   0% /sys/firmware
 ```
-
+Check if Spark jobs are writing to the RSS
+```bash
+>> kubectl logs celeborn-spark3-5-worker-1 -n celeborn 
+# some data were persisted to the Direct memory usage(offheap memory) & disk
+24/11/03 22:17:52,477 INFO [worker-memory-manager-reporter] MemoryManager: Direct memory usage: 416.0 MiB/24.0 GiB, disk buffer size: 96.3 MiB, sort memory size: 0.0 B, read buffer size: 0.0 B
+# some shuffle files were commited to RSS from a Spark app
+24/11/03 22:17:57,533 INFO [worker-forward-message-scheduler] StorageManager: Updated diskInfos:
+DiskInfo(maxSlots: 0, committed shuffles 2, running applications 1, shuffleAllocations: Map(spark-000000034nhngp02t92-2 -> 334), mountPoint: /rss2/disk2, usableSpace: 6.0 TiB, avgFlushTime: 234546 ns, avgFetchTime: 0 ns, activeSlots: 334, storageType: SSD) status: HEALTHY dirs /rss2/disk2/celeborn-worker/shuffle_data
+```
 ```bash
 # OPTIONAL: only if prometheus operator is installed
 kubectl get podmonitor -n celeborn
@@ -500,12 +507,12 @@ export AWS_REGION=<YOUR_REGION:us-west-2>
 aws emr-containers create-job-template --cli-input-json file://example/pod-template/clb-dra-job-template.json
 aws emr-containers create-job-template --cli-input-json file://example/pod-template/dra-tracking-job-template.json
 
-# Example 1: Without a patch for DRA in Spark 3.3, run TPCDS test with RSS+DRA against c59a nodegroup
-./example/emr6.10-benchmark-celeborn_track.sh
+# Example 1: Without a patch for DRA in Spark 3.3, run TPCDS test with RSS+DRA
+./example/emr6.10-benchmark-celeborn.sh
 # Example 2: Without shuffle tracking in Spark3.5+, run TPCDS test with RSS+DRA
-./example/emr7.0-benchmark-celeborn_notrack.sh
-# Example 3: Without RSS, run a normal EMR on EKS job with DRA on - against c5d9a nodegroup. Expect Data Loss.
-./example/emr6.10-benchmark-emr.sh
+./example/emr7.0-benchmark-celeborn.sh
+# Example 3: Without RSS, run a usual job with DRA on. Expect Data Loss.
+./example/emr6.10-benchmark-norss.sh
 # check job progress
 kubectl get po -n emr
 kubectl logs <DRIVER_POD_NAME> -n emr spark-kubernetes-driver

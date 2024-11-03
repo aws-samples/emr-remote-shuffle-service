@@ -6,7 +6,7 @@
         "jobDriver": {
             "sparkSubmitJobDriver": { 
                 "entryPoint": "local:///usr/lib/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar",
-                "entryPointArguments":["${DataLocation}","/opt/tpcds-kit/tools","parquet","3000","1","false","${QueryList}","true"],
+                "entryPointArguments": ["${DataLocation}","/opt/tpcds-kit/tools","parquet","3000","1","false","${QueryList}","true"],
                 "sparkSubmitParameters": "--class com.amazonaws.eks.tpcds.BenchmarkSQL --conf spark.driver.cores=2 --conf spark.driver.memory=3g --conf spark.executor.cores=4 --conf spark.executor.memory=6g"
             }
         },
@@ -24,40 +24,38 @@
                   "spark.executor.memoryOverhead": "2G",
 
                   "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
-                  "spark.sql.adaptive.enabled": "true",
-                  "spark.shuffle.service.enabled": "true",
                   "spark.dynamicAllocation.shuffleTracking.enabled": "${DRA_shuffleTracking}",
-                  
                   "spark.dynamicAllocation.enabled": "${DRA_enabled}",
-                  "spark.sql.adaptive.localShuffleReader.enabled":"${AQE_localShuffleReader}",
+                  "spark.sql.adaptive.localShuffleReader.enabled": "${AQE_localShuffleReader}",
                   "spark.dynamicAllocation.minExecutors": "1",
+                  "spark.dynamicAllocation.maxExecutors": "50",
                   "spark.dynamicAllocation.executorIdleTimeout": "${DRA_executorIdleTimeout}",
                   "spark.dynamicAllocation.schedulerBacklogTimeout": "5s",
                   "spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "5s",
                   "spark.dynamicAllocation.executorAllocationRatio": "0.5",
 
                   "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.SparkShuffleManager",
-                  "spark.celeborn.master.endpoints": "192.168.12.137:9097,192.168.18.183:9097,192.168.23.132:9097",
+                  "spark.celeborn.master.endpoints": "${RSS_server}",
                   "spark.shuffle.sort.io.plugin.class": "${RSS_shuffle_io}",
                   "spark.celeborn.client.spark.push.unsafeRow.fastWrite.enabled": "false",
                   "spark.celeborn.shuffle.chunk.size": "4m",
                   "spark.celeborn.client.push.maxReqsInFlight": "128",
-                  "spark.celeborn.rpc.askTimeout": "240s",
-                  "spark.celeborn.client.push.replicate.enabled": "false",
+                  "spark.celeborn.rpc.askTimeout": "2000s",
+                  "spark.celeborn.client.push.replicate.enabled": "true",
 
-                  "spark.metrics.appStatusSource.enabled":"true",
-                  "spark.ui.prometheus.enabled":"true",
-                  "spark.executor.processTreeMetrics.enabled":"true",
-                  "spark.kubernetes.driver.annotation.prometheus.io/scrape":"true",
-                  "spark.kubernetes.driver.annotation.prometheus.io/path":"/metrics/executors/prometheus/",
-                  "spark.kubernetes.driver.annotation.prometheus.io/port":"4040",
-                  "spark.kubernetes.driver.service.annotation.prometheus.io/scrape":"true",
-                  "spark.kubernetes.driver.service.annotation.prometheus.io/path":"/metrics/driver/prometheus/",
-                  "spark.kubernetes.driver.service.annotation.prometheus.io/port":"4040",
-                  "spark.metrics.conf.*.sink.prometheusServlet.class":"org.apache.spark.metrics.sink.PrometheusServlet",
-                  "spark.metrics.conf.*.sink.prometheusServlet.path":"/metrics/driver/prometheus/",
-                  "spark.metrics.conf.master.sink.prometheusServlet.path":"/metrics/master/prometheus/",
-                  "spark.metrics.conf.applications.sink.prometheusServlet.path":"/metrics/applications/prometheus/"
+                  "spark.metrics.appStatusSource.enabled": "true",
+                  "spark.ui.prometheus.enabled": "true",
+                  "spark.executor.processTreeMetrics.enabled": "true",
+                  "spark.kubernetes.driver.annotation.prometheus.io/scrape": "true",
+                  "spark.kubernetes.driver.annotation.prometheus.io/path": "/metrics/executors/prometheus/",
+                  "spark.kubernetes.driver.annotation.prometheus.io/port": "4040",
+                  "spark.kubernetes.driver.service.annotation.prometheus.io/scrape": "true",
+                  "spark.kubernetes.driver.service.annotation.prometheus.io/path": "/metrics/driver/prometheus/",
+                  "spark.kubernetes.driver.service.annotation.prometheus.io/port": "4040",
+                  "spark.metrics.conf.*.sink.prometheusServlet.class": "org.apache.spark.metrics.sink.PrometheusServlet",
+                  "spark.metrics.conf.*.sink.prometheusServlet.path": "/metrics/driver/prometheus/",
+                  "spark.metrics.conf.master.sink.prometheusServlet.path": "/metrics/master/prometheus/",
+                  "spark.metrics.conf.applications.sink.prometheusServlet.path": "/metrics/applications/prometheus/"
             }},
             {
                 "classification": "spark-log4j",
@@ -125,6 +123,11 @@
             "RSS_shuffle_io": {
                 "type": "STRING",
                 "defaultValue": "org.apache.spark.shuffle.sort.io.LocalDiskShuffleDataIO"
+            },
+            "RSS_server": {
+                "type": "STRING",
+                "defaultValue": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
+
             }
         }
     }

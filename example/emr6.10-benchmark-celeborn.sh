@@ -16,23 +16,23 @@ export JOB_TEMPLATE_ID=$(aws emr-containers list-job-templates --query "template
 
 aws emr-containers start-job-run \
 --virtual-cluster-id $VIRTUAL_CLUSTER_ID \
---name emr7-clb-5stimeout \
+--name emr610-clb-5stimeout \
 --job-template-id $JOB_TEMPLATE_ID \
 --job-template-parameters '{
     "EmrRoleARN": "'$EMR_ROLE_ARN'",
-    "CustomImageURI": "'$ECR_URL'/celeborn-rss:emr7.0_clbtest",
+    "CustomImageURI": "public.ecr.aws/myang-poc/celeborn-rss:emr6.10_clbtest",
     "DataLocation": "s3://'$S3BUCKET'/BLOG_TPCDS-TEST-3T-partitioned\",\"s3://'$S3BUCKET'/EMRONEKS_TPCDS-TEST-3T-RESULT",
     
-    "QueryList": "q24a-v2.4,q25-v2.4,q26-v2.4,q27-v2.4,q30-v2.4q31-v2.4,q32-v2.4,q33-v2.4,q34-v2.4,q36-v2.4,q37-v2.4,q39a-v2.4,q39b-v2.4,q41-v2.4,q42-v2.4,q43-v2.4,q52-v2.4,q53-v2.4,q55-v2.4,q56-v2.4,q60-v2.4,q61-v2.4,q63-v2.4,q73-v2.4,q77-v2.4,q83-v2.4,q86-v2.4,q98-v2.4",
+    "QueryList": "q24a-v2.4,q25-v2.4,q26-v2.4,q27-v2.4,q30-v2.4q31-v2.4,q32-v2.4,q33-v2.4,q34-v2.4,q36-v2.4,q37-v2.4,q39a-v2.4,q39b-v2.4,q41-v2.4,q42-v2.4,q43-v2.4,q52-v2.4,q53-v2.4,q55-v2.4,q56-v2.4,q60-v2.4,q61-v2.4,q63-v2.4,q67-v2.4,q73-v2.4,q77-v2.4,q83-v2.4,q86-v2.4,q98-v2.4",
     "DRA_enabled": "true",
     "DRA_executorIdleTimeout": "5s",
 
-    "DRA_shuffleTracking": "false",
+    "DRA_shuffleTracking": "true",
     "AQE_localShuffleReader": "false",
-    "RSS_shuffle_io": "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO",
+    "RSS_server": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097",
 
     "PodNamePrefix": "clb-dra-track",
     "EKSNodegroup": "c59a",
-    "LoggerLevel": "DEBUG",
+    "LoggerLevel": "WARN",
     "LogS3BucketUri": "s3://'$S3BUCKET'/elasticmapreduce/emr-containers"
   }'

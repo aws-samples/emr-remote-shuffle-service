@@ -28,6 +28,7 @@ aws emr-containers start-job-run \
     "DRA_executorIdleTimeout": "5s",
 
     "DRA_shuffleTracking": "true",
+    "DRA_trackingTimeout": "5s",
     "AQE_localShuffleReader": "false",
     "RSS_server": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097",
 

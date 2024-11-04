@@ -23,6 +23,7 @@
                   "spark.driver.memoryOverhead": "1000",
                   "spark.executor.memoryOverhead": "2G",
 
+                  "spark.shuffle.service.enabled": "false",
                   "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
                   "spark.dynamicAllocation.shuffleTracking.enabled": "${DRA_shuffleTracking}",
                   "spark.dynamicAllocation.enabled": "${DRA_enabled}",
@@ -30,8 +31,7 @@
                   "spark.dynamicAllocation.minExecutors": "1",
                   "spark.dynamicAllocation.maxExecutors": "50",
                   "spark.dynamicAllocation.executorIdleTimeout": "${DRA_executorIdleTimeout}",
-                  "spark.dynamicAllocation.schedulerBacklogTimeout": "5s",
-                  "spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "5s",
+                  "spark.dynamicAllocation.shuffleTracking.timeout": "${DRA_trackingTimeout}",
                   "spark.dynamicAllocation.executorAllocationRatio": "0.5",
 
                   "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.SparkShuffleManager",
@@ -40,8 +40,11 @@
                   "spark.celeborn.client.spark.push.unsafeRow.fastWrite.enabled": "false",
                   "spark.celeborn.shuffle.chunk.size": "4m",
                   "spark.celeborn.client.push.maxReqsInFlight": "128",
-                  "spark.celeborn.rpc.askTimeout": "2000s",
-                  "spark.celeborn.client.push.replicate.enabled": "true",
+                  "spark.celeborn.rpc.askTimeout": "240s",
+                  "spark.celeborn.client.push.replicate.enabled": "false",
+                  "spark.celeborn.client.push.excludeWorkerOnFailure.enabled": "true",
+                  "spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled": "true",
+                  "spark.celeborn.client.commitFiles.ignoreExcludedWorker": "true",
 
                   "spark.metrics.appStatusSource.enabled": "true",
                   "spark.ui.prometheus.enabled": "true",
@@ -64,14 +67,7 @@
                 }
             }], 
             "monitoringConfiguration": {
-                "persistentAppUI": "ENABLED",
-                "cloudWatchMonitoringConfiguration": {
-                    "logGroupName": "emr_eks",
-                    "logStreamNamePrefix": "clb_dra"
-                  },
-                "s3MonitoringConfiguration": {
-                    "logUri": "${LogS3BucketUri}"
-                }
+                "persistentAppUI": "ENABLED"
             }
         },
         "jobTags": { 
@@ -104,6 +100,10 @@
             "DRA_executorIdleTimeout":{
                 "type": "STRING",
                 "defaultValue": "60"
+            },
+            "DRA_trackingTimeout":{
+                "type": "STRING",
+                "defaultValue": "24h"
             },
             "DRA_shuffleTracking":{
                 "type": "STRING",

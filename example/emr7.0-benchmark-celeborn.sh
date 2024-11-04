@@ -34,6 +34,6 @@ aws emr-containers start-job-run \
 
     "PodNamePrefix": "clb-dra-track",
     "EKSNodegroup": "c59a",
-    "LoggerLevel": "INFO",
+    "LoggerLevel": "DEBUG",
     "LogS3BucketUri": "s3://'$S3BUCKET'/elasticmapreduce/emr-containers"
   }'

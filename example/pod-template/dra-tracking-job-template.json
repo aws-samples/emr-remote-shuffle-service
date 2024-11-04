@@ -55,14 +55,7 @@
                 }
             }], 
             "monitoringConfiguration": {
-                "persistentAppUI": "ENABLED",
-                "cloudWatchMonitoringConfiguration": {
-                    "logGroupName": "emr_eks",
-                    "logStreamNamePrefix": "dra_tracking"
-                  },
-                "s3MonitoringConfiguration": {
-                    "logUri": "${LogS3BucketUri}"
-                }
+                "persistentAppUI": "ENABLED"
             }
         },
         "jobTags": { 

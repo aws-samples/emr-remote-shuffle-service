@@ -63,27 +63,24 @@ spec:
     # DRA
     spark.dynamicAllocation.enabled: "true"
     spark.dynamicAllocation.minExecutors": "1"
-    # spark.dynamicAllocation.maxExecutors": "100"
+    spark.dynamicAllocation.maxExecutors": "50"
     spark.dynamicAllocation.executorIdleTimeout": "5s"
-    spark.dynamicAllocation.schedulerBacklogTimeout": "5s"
-    spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "5s"
     spark.dynamicAllocation.executorAllocationRatio: "0.5"
-    # NOTE: disable the shuffle tracking for Spark 3.5+, otherwise use the default
+    # NOTE: disable the shuffle tracking for Spark 3.5+, otherwise use the following
     spark.dynamicAllocation.shuffleTracking.enabled: "true"
     spark.sql.adaptive.localShuffleReader.enabled: "false"
     # RSS
-    spark.shuffle.service.enabled: "true"
     spark.shuffle.manager: "org.apache.spark.shuffle.celeborn.SparkShuffleManager"
     spark.celeborn.master.endpoints: "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
     spark.celeborn.shuffle.chunk.size: "4m"
     spark.celeborn.client.push.maxReqsInFlight: "128"
     spark.celeborn.rpc.askTimeout: "240s"
     spark.celeborn.client.push.replicate.enabled: "true"
-    spark.celeborn.client.push.blacklist.enabled: "true"
     spark.celeborn.client.push.excludeWorkerOnFailure.enabled: "true"
     spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled: "true"
-    spark.celeborn.client.commitFiles.ignoreExcludedWorker": "true"
-    spark.sql.optimizedUnsafeRowSerializers.enabled: "false"
+    spark.celeborn.client.commitFiles.ignoreExcludedWorker: "true"
+    # spark.sql.optimizedUnsafeRowSerializers.enabled: "false"
+    spark.celeborn.client.spark.push.unsafeRow.fastWrite.enabled: "false"
     # NOTE: only need to set the sort io plugin for Spark 3.5+
     # spark.shuffle.sort.io.plugin.class: "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO"
     

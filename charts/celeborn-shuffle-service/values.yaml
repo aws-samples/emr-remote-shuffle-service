@@ -1,7 +1,7 @@
 image:
   repository: public.ecr.aws/myang-poc/celeborn-rss
   tag: spark3.3_8-jdk
-  # tag: spark3.5_jdk8
+  # tag: spark3.5_jdk17
   pullPolicy: Always
 
 nodeSelector:

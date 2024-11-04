@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-FileCopyrightText: Copyright 2021 Amazon.com, Inc. or its affiliates.
 # SPDX-License-Identifier: MIT-0
-
+    # "CustomImageURI": "'$ECR_URL'/clb-spark-benchmark:emr-6.10.0_clb",
 # need to create the job template first
 # aws emr-containers create-job-template --cli-input-json file://example/pod-template/dra-tracking-job-template.json
 
@@ -20,7 +20,7 @@ aws emr-containers start-job-run \
 --job-template-id $JOB_TEMPLATE_ID \
 --job-template-parameters '{
     "EmrRoleARN": "'$EMR_ROLE_ARN'",
-    "CustomImageURI": "'$ECR_URL'/clb-spark-benchmark:emr-6.10.0_clb",
+    "CustomImageURI": "public.ecr.aws/myang-poc/celeborn-rss:emr6.10_clbtest",
     "DriverPodTemplateS3Path": "s3://'$S3BUCKET'/app_code/pod-template/driver-pod-template.yaml",
     "ExecutorPodTemplateS3Path": "s3://'$S3BUCKET'/app_code/pod-template/executor-pod-template.yaml",
     "InputDataLocation": "s3://'$S3BUCKET'/BLOG_TPCDS-TEST-3T-partitioned",
@@ -30,6 +30,7 @@ aws emr-containers start-job-run \
     "DRA_executorIdleTimeout": "5s",
 
     "DRA_shuffleTracking": "true",
+    "DRA_trackingTimeout": "60s",
     "AQE_localShuffleReader": "true",
 
     "PodNamePrefix": "norss-dra-track",

@@ -257,7 +257,7 @@ git clone git@github.com:apache/incubator-celeborn.git
 cd incubator-celeborn
 ./build/make-distribution.sh -Pspark-3.3
 ```
-For a quick start, you can download the pre-compiled version 0.2.2 for Spark3.3 from the [link](https://meloyang-emr-bda.s3.amazonaws.com/spark3.3-apache-celeborn-0.2.2-SNAPSHOT-bin.tgz), then deploy the binary to 4 X EC2 instance - 1 master + 3 workers. In this exmaple, we use the instance type `i3en.6xlarge` to host the cluster of RSS server.
+For a quick start, you can download the pre-compiled version 0.2.2 for Spark3.3 from the [link](https://blogpost-sparkoneks-us-east-1.s3.us-east-1.amazonaws.com/blog/bda-util/spark3.3-apache-celeborn-0.2.2-SNAPSHOT-bin.tgz), then deploy the binary to 4 X EC2 instance, including 1 master + 3 workers. In this exmaple, we use the instance type `i3en.6xlarge` to host the RSS server cluster.
 
 Firstly, spin up and login to an EC2 instance, follow the steps below to build an RSS-enabled AMI, then deploy to other 3 EC2 nodes:
 

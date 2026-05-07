@@ -435,12 +435,12 @@ Now, let's configure the RSS Client side.
 
 1.Setup Spark client
 
-Copy `$CELEBORN_HOME/spark/*.jar` from your unzipped the tarball directory to `/usr/lib/spark/jars/` on your EMR on EC2 cluster where runs Spark applications. Or directly download the [pre-compiled jar](https://meloyang-emr-bda.s3.amazonaws.com/celeborn-client-spark-3-shaded_2.12-0.2.2-SNAPSHOT.jar) for Spark version 3.3 to each EMR on EC2 nodes. 
+Copy `$CELEBORN_HOME/spark/*.jar` from your unzipped the tarball directory to `/usr/lib/spark/jars/` on your EMR on EC2 cluster where runs Spark applications. Or directly download the [pre-compiled jar](https://blogpost-sparkoneks-us-east-1.s3.us-east-1.amazonaws.com/blog/bda-util/spark3.3-apache-celeborn-0.2.2-SNAPSHOT-bin.tgz) for Spark version 3.3 to each EMR on EC2 nodes. 
 
 **NOTE**: Both Celeborn and Spark versions must match between the Server and Client side. For instance, if you chose the quick start approach, your client jar must be compiled for the Celeborn version 0.2.2 and Spark 3.3. 
 
 
-2.Or skip the step 1, and simply submit a Spark job mapping the client jar to your Spark's class path location during the submission:
+2. Map the client jar to your Spark's class path location when submit a job:
 ```
 --jars /usr/lib/spark/jars/celeborn-client-spark-3-shaded_2.12-0.2.2-SNAPSHOT.jar
 ```

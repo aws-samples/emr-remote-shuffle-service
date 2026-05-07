@@ -296,7 +296,7 @@ apt-get update && \
 3.Unzip the tarball to $CELEBORN_HOME:
 
 ```bash
-curl https://meloyang-emr-bda.s3.amazonaws.com/spark3.3-apache-celeborn-0.2.2-SNAPSHOT-bin.tgz
+curl https://blogpost-sparkoneks-us-east-1.s3.us-east-1.amazonaws.com/blog/bda-util/spark3.3-apache-celeborn-0.2.2-SNAPSHOT-bin.tgz
 cat *.tgz | tar -xvzf - && mv apache-celeborn-*-bin /opt/celeborn
 ```
 

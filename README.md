@@ -15,21 +15,80 @@ In this repo, we select [Aapche Celeborn](https://celeborn.apache.org/) as the r
 2. [kubectl >=1.24](https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html)
 3. [eksctl >= 0.143.0](https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html)
 4. [helm](https://helm.sh/docs/intro/install/)
-5. [OPTIONAL: Buildx included by Docker Desktop installation](https://docs.docker.com/desktop/)
+5. [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
+6. [OPTIONAL: Buildx included by Docker Desktop installation](https://docs.docker.com/desktop/)
 
 ## Infrastructure
-If you do not have your own environment to test the remote shuffle solution, run the command to setup the infrastructure you need. Change the EKS cluster name and AWS region if needed.
+If you do not have your own environment to test the remote shuffle solution, we will use the Data on EKS blueprint to provision the cluster, deploy Karpenter, Amazon Managed Prometheus, grafana-dashboard. Change the EKS cluster name and AWS region if needed in the ```variables.tf```.
 
 ```bash
-export EKSCLUSTER_NAME=eks-rss
-export AWS_REGION=us-east-1
-./eks_provision.sh
+git clone https://github.com/awslabs/data-on-eks.git
+cd ./data-on-eks/analytics/terraform/emr-eks-karpenter
+terraform init
 ```
-The shell script provides a one-click experience to create an EMR on EKS environment and OSS Spark Operator on a single EKS cluster. The EKS cluster contains the following managed nodegroups which are located in a single AZ with a same [Cluster placment strategy](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html), in order to achieve the low-latency network performance for the intercommunication between Spark apps and shuffle services. Comment out unwanted EKS node groups from the `eks_provision.sh` file if needed.
 
-- 1 - [`rss`](https://github.com/aws-samples/emr-remote-shuffle-service/blob/8e6300b65f04b1846a081e8c496101fc20cfd084/eks_provision.sh#L125) can scale i3en.6xlarge instances from 1 to 20 in **AZ-a**. They are labelled as `app=rss` to host the RSS servers. 2 SSD disks are mounted to each EC2 instance.
-- 2 - [`c59a`](https://github.com/aws-samples/emr-remote-shuffle-service/blob/8e6300b65f04b1846a081e8c496101fc20cfd084/eks_provision.sh#L149) can scale c5.9xlarge instances from 1 to 7 at **AZ-a**, which only has a 30GB-root volume. They are labelled with `app=sparktest` to run multiple EMR on EKS or OSS Spark jobs in parallel. The nodegroup is used by testing Spark apps with remote shuffle service enabled.
-- 3 - [`c5d9a`](https://github.com/aws-samples/emr-remote-shuffle-service/blob/8e6300b65f04b1846a081e8c496101fc20cfd084/eks_provision.sh#L166) can scales c5d.9xlarge instances from 1 to 7 at **AZ-a**. They are also labelled as `app=sparktest` to run EMR on EKS or OSS Spark jobs without RSS. Additionally, the nodegroup can be used to run TPCDS source data generation job if needed. 
+To deploy the EMR Spark Operator Add-on. You need to set the the below value to `true` in `variables.tf` file.
+
+```bash
+variable "enable_emr_spark_operator" {
+  description = "Enable the Spark Operator to submit jobs with EMR Runtime"
+  default     = true
+  type        = bool
+}
+```
+
+:::
+
+Deploy the pattern
+
+```bash
+terraform apply
+```
+
+Enter `yes` to apply.
+
+## Verify the resources
+
+Let’s verify the resources created by `terraform apply`.
+
+Verify the Spark Operator and Amazon Managed service for Prometheus.
+
+```bash
+
+helm list --namespace spark-operator -o yaml
+
+aws amp list-workspaces --alias amp-ws-emr-eks-karpenter
+
+```
+
+Verify Namespace `emr-data-team-a` and Pod status for `Prometheus`, `Vertical Pod Autoscaler`, `Metrics Server` and `Cluster Autoscaler`.
+
+```bash
+aws eks --region us-west-2 update-kubeconfig --name spark-operator-doeks # Creates k8s config file to authenticate with EKS Cluster
+
+kubectl get nodes # Output shows the EKS Managed Node group nodes
+
+kubectl get ns | grep emr-data-team # Output shows emr-data-team-a for data team
+
+kubectl get pods --namespace=vpa  # Output shows Vertical Pod Autoscaler pods
+
+kubectl get pods --namespace=kube-system | grep  metrics-server # Output shows Metric Server pod
+
+kubectl get pods --namespace=kube-system | grep  cluster-autoscaler # Output shows Cluster Autoscaler pod
+```
+
+Create karpenter nodepools and ec2nodeclass
+
+Please update the settings in nodepool and ec2nodeclass, like ```role`` etc.
+
+```bash
+
+git clone https://github.com/aws-samples/emr-remote-shuffle-service.git
+cd emr-remote-shuffle-service
+kubectl apply -f Karpenter
+
+```
+
 
 ## Enable Remote Shuffle Server (RSS)
 

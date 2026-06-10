@@ -1,0 +1,34 @@
+apiVersion: karpenter.k8s.aws/v1beta1
+kind: EC2NodeClass
+metadata:
+  name: celeborn-worker-graviton
+spec:
+  amiFamily: Bottlerocket
+  blockDeviceMappings:
+    # Root device
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 4Gi
+        volumeType: gp3
+    # Data device: Container resources such as images and logs
+    - deviceName: /dev/xvdb
+      ebs:
+        volumeSize: 100Gi
+        volumeType: gp3
+  metadataOptions:
+    httpEndpoint: enabled
+    httpProtocolIPv6: disabled
+    httpPutResponseHopLimit: 2
+    httpTokens: required
+  role: karpenter-emr-eks-celeborn-2025052411413514010000001a
+  securityGroupSelectorTerms:
+  - name: emr-eks-celeborn-node*
+  subnetSelectorTerms:
+  - tags:
+      Name: emr-eks-celeborn-private*
+  tags:
+    InstanceType: celeborn-worker-graviton
+  userData: |
+    [settings.bootstrap-containers.bear]
+    mode = "once"
+    user-data = "IS91c3IvYmluL2VudiBiYXNoCnNldCAtZXgKClJPT1RfUEFUSD0iLy5ib3R0bGVyb2NrZXQvcm9vdGZzIgoKIyBTeW1saW5rcyB0byBlcGhlbWVyYWwgZGlza3MgYXJlIGNyZWF0ZWQgaGVyZSBieSB1ZGV2CmRlY2xhcmUgLWEgRVBIRU1FUkFMX0RJU0tTCkVQSEVNRVJBTF9ESVNLUz0oIiR7Uk9PVF9QQVRIfSIvZGV2L2Rpc2svZXBoZW1lcmFsLyopCgojIEV4aXQgZWFybHkgaWYgdGhlcmUgYXJlbid0IGVwaGVtZXJhbCBkaXNrcwppZiBbICIkeyNFUEhFTUVSQUxfRElTS1NbQF19IiAtZXEgMCBdOyB0aGVuCiAgZWNobyAibm8gZXBoZW1lcmFsIGRpc2tzIGZvdW5kIgogIGV4aXQgMQpmaQoKTURfTkFNRT0ibG9jYWwtZGF0YSIKTURfREVWSUNFPSIvZGV2L21kLyR7TURfTkFNRX0iCk1EX0NPTkZJRz0iLy5ib3R0bGVyb2NrZXQvYm9vdHN0cmFwLWNvbnRhaW5lcnMvY3VycmVudC9tZGFkbS5jb25mIgoKIyBDcmVhdGUgb3IgYXNzZW1ibGUgdGhlIGFycmF5LgppZiBbICEgLXMgIiR7TURfQ09ORklHfSIgXSA7IHRoZW4KICBtZGFkbSAtLWNyZWF0ZSAtLWZvcmNlIC0tdmVyYm9zZSBcCiAgICAiJHtNRF9ERVZJQ0V9IiBcCiAgICAgIC0tbGV2ZWw9MCBcCiAgICAgIC0tbmFtZT0iJHtNRF9OQU1FfSIgXAogICAgICAtLXJhaWQtZGV2aWNlcz0iJHsjRVBIRU1FUkFMX0RJU0tTW0BdfSIgXAogICAgICAiJHtFUEhFTUVSQUxfRElTS1NbQF19IgogIG1kYWRtIC0tZGV0YWlsIC0tc2NhbiA+ICIke01EX0NPTkZJR30iCmVsc2UKICBtZGFkbSAtLWFzc2VtYmxlIC0tY29uZmlnPSIke01EX0NPTkZJR30iICIke01EX0RFVklDRX0iCmZpCgojIEZvcm1hdCB0aGUgYXJyYXkgaWYgbm90IGFscmVhZHkgZm9ybWF0dGVkLgppZiAhIGJsa2lkIC0tbWF0Y2gtdG9rZW4gVFlQRT14ZnMgIiR7TURfREVWSUNFfSIgOyB0aGVuCiAgbWtmcy54ZnMgIiR7TURfREVWSUNFfSIKZmkKCk1PVU5UX1BPSU5UPSIke1JPT1RfUEFUSH0vbW50LyR7TURfTkFNRX0iCgojIE1vdW50IHRoZSBhcnJheSBpbiB0aGUgaG9zdCdzIC9sb2NhbC1kYXRhLgpta2RpciAtcCAiJHtNT1VOVF9QT0lOVH0iCm1vdW50ICIke01EX0RFVklDRX0iICIke01PVU5UX1BPSU5UfSIKY2hvd24gLWhSICs5OTk6KzEwMDAgJHtST09UX1BBVEh9L21udC8ke01EX05BTUV9KgoKIyBLZWVwIHRyYWNrIG9mIHdoZXRoZXIgd2UgY2FuIHVubW91bnQgdGhlIGFycmF5IGxhdGVyLiBUaGlzIGRlcGVuZHMgb24gdGhlCiMgdmVyc2lvbiBvZiBCb3R0bGVyb2NrZXQuCnNob3VsZF91bW91bnQ9Im5vIgojIFdoZW4gdXNpbmcgYmluZCBtb3VudHMsIHRoZSBwYXJlbnQgZGlyZWN0b3J5IHdoZXJlIHRoZSBhcnJheSBpcyBtb3VudGVkIGNhbgojIGJlIHVubW91bnRlZC4gVGhpcyBhdm9pZHMgYSBzZWNvbmQsIHJlZHVuZGFudCBtb3VudCBlbnRyeSB1bmRlciBgL21udGAgZm9yCiMgZXZlcnkgbmV3IG1vdW50IGluIG9uZSBvZiB0aGUgc3RhdGUgZGlyZWN0b3JpZXMuCmlmIFsgIiR7c2hvdWxkX3Vtb3VudH0iID09ICJ5ZXMiIF0gOyB0aGVuCiAgdW1vdW50ICIke01PVU5UX1BPSU5UfSIKZmk="

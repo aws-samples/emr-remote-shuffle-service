@@ -1,0 +1,36 @@
+apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: celeborn-master-graviton
+spec:
+  disruption:
+    budgets:
+    - nodes: 100%
+    consolidateAfter: 30s
+    consolidationPolicy: WhenEmpty
+    expireAfter: 'Never'
+  limits:
+    cpu: 1000
+  template:
+    metadata:
+      labels:
+        NodeGroupType: CelebornMaster
+        provisioner: celeborn-master-graviton
+        type: karpenter
+    spec:
+      nodeClassRef:
+        name: celeborn-master-graviton
+      requirements:
+      - key: topology.kubernetes.io/zone
+        operator: In
+        values:
+        - us-west-2a
+      - key: karpenter.sh/capacity-type
+        operator: In
+        values:
+        - on-demand
+      - key: node.kubernetes.io/instance-type
+        operator: In
+        values:
+        - i3en.large
+  weight: 10

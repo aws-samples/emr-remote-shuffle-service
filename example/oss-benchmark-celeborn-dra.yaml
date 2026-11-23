@@ -59,7 +59,7 @@ spec:
     # NOTE: only need to set the sort io plugin for Spark 3.5+
     # spark.shuffle.sort.io.plugin.class: "org.apache.spark.shuffle.celeborn.CelebornShuffleDataIO"
     "spark.celeborn.shuffle.chunk.size": "4m"
-    "spark.celeborn.push.maxReqsInFlight": "128"
+    "spark.celeborn.client.push.maxReqsInFlight.total": "128"
     "spark.celeborn.client.push.replicate.enabled": "true"
     "spark.celeborn.client.push.excludeWorkerOnFailure.enabled": "true"
     "spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled": "true"

@@ -73,7 +73,7 @@ spec:
     spark.shuffle.manager: "org.apache.spark.shuffle.celeborn.SparkShuffleManager"
     spark.celeborn.master.endpoints: "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
     spark.celeborn.shuffle.chunk.size: "4m"
-    spark.celeborn.client.push.maxReqsInFlight: "128"
+    spark.celeborn.client.push.maxReqsInFlight.total: "128"
     spark.celeborn.rpc.askTimeout: "240s"
     spark.celeborn.client.push.replicate.enabled: "true"
     spark.celeborn.client.push.excludeWorkerOnFailure.enabled: "true"

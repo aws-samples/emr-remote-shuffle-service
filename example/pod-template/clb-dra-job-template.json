@@ -39,7 +39,7 @@
                   "spark.shuffle.sort.io.plugin.class": "${RSS_shuffle_io}",
                   "spark.celeborn.client.spark.push.unsafeRow.fastWrite.enabled": "false",
                   "spark.celeborn.shuffle.chunk.size": "4m",
-                  "spark.celeborn.client.push.maxReqsInFlight": "128",
+                  "spark.celeborn.client.push.maxReqsInFlight.total": "128",
                   "spark.celeborn.rpc.askTimeout": "240s",
                   "spark.celeborn.client.push.replicate.enabled": "false",
                   "spark.celeborn.client.push.excludeWorkerOnFailure.enabled": "true",

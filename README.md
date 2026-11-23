@@ -475,9 +475,9 @@ spark.sql.adaptive.enabled true
 spark.sql.adaptive.skewJoin.enabled true
 
 spark.celeborn.shuffle.chunk.size 4m
-spark.celeborn.client.push.maxReqsInFlight 128
+spark.celeborn.client.push.maxReqsInFlight.total 128
 spark.celeborn.rpc.askTimeout 240s
-spark.celeborn.client.push.blacklist.enabled true
+spark.celeborn.client.push.excludeWorkerOnFailure.enabled true
 spark.celeborn.client.push.excludeWorkerOnFailure.enabled true
 spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled true
 spark.celeborn.client.commitFiles.ignoreExcludedWorker true

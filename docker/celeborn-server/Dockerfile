@@ -15,18 +15,24 @@
 # limitations under the License.
 #
 
-ARG java_image_tag=8-jdk-focal
+ARG java_image_tag=17-jdk-jammy
 
-FROM eclipse-temurin:${java_image_tag} AS jdk
-ARG SPARK_VERSION=3.3
-ARG JDK_VERSION=8
-ARG CELEBORN_VERSION=0.4
+# server jars are architecture-independent: build once on the native platform
+FROM --platform=$BUILDPLATFORM eclipse-temurin:${java_image_tag} AS jdk
+ARG SPARK_VERSION=4.1
+ARG JDK_VERSION=17
+ARG CELEBORN_VERSION=0.7.0
+# Git ref to build: a release tag (default), a branch such as `main`, or a full commit SHA.
+ARG CELEBORN_GIT_REF=v${CELEBORN_VERSION}
 
-RUN apt-get update && apt-get install -y git
-# build celeborn binary
-# RUN git clone https://github.com/apache/incubator-celeborn.git -b v0.3.0-incubating
-RUN git clone https://github.com/apache/celeborn.git -b branch-${CELEBORN_VERSION}
-WORKDIR celeborn
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+# build celeborn binary (shallow fetch works for tags, branches and commit SHAs)
+RUN git init -q /celeborn && cd /celeborn && \
+    git remote add origin https://github.com/apache/celeborn.git && \
+    git fetch -q --depth 1 origin "${CELEBORN_GIT_REF}" && \
+    git checkout -q FETCH_HEAD && \
+    git log -1 --format='Building celeborn %H (%cd)'
+WORKDIR /celeborn
 RUN ./build/make-distribution.sh -Pspark-${SPARK_VERSION} -Pjdk-${JDK_VERSION} && \
     cat *.tgz | tar -xvzf - && \
     mv apache-celeborn-*-bin /opt/celeborn

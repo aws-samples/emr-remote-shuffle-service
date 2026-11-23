@@ -1,7 +1,6 @@
 image:
   repository: public.ecr.aws/myang-poc/celeborn-rss
-  tag: spark3.3_8-jdk
-  # tag: spark3.5_jdk17
+  tag: clb0.7.0_spark4.1_jdk17
   pullPolicy: Always
 
 nodeSelector:
@@ -67,15 +66,15 @@ celeborn:
   celeborn.master.ha.enabled: true
   celeborn.metrics.enabled: true
   celeborn.metrics.prometheus.path: /metrics/prometheus
-  celeborn.master.metrics.prometheus.port: 9098
-  celeborn.worker.metrics.prometheus.port: 9096
+  celeborn.master.http.port: 9098
+  celeborn.worker.http.port: 9096
   celeborn.worker.monitor.disk.enabled: true
   celeborn.shuffle.chunk.size: 8m
   celeborn.rpc.io.serverThreads: 64
   celeborn.rpc.io.numConnectionsPerPeer: 8
   celeborn.replicate.io.numConnectionsPerPeer: 24
   celeborn.rpc.io.clientThreads: 64
-  celeborn.rpc.dispatcher.numThreads: 4
+  celeborn.rpc.dispatcher.threads: 4
   celeborn.worker.flusher.buffer.size: 256K
   celeborn.worker.flusher.threads: 512
   celeborn.worker.flusher.ssd.threads: 512
@@ -85,10 +84,10 @@ celeborn:
   celeborn.worker.commitFiles.threads: 128
 environments:
   CELEBORN_MASTER_MEMORY: 4g
-  CELEBORN_MASTER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-master.out -Dio.netty.leakDetectionLevel=advanced"
+  CELEBORN_MASTER_JAVA_OPTS: "-Xlog:gc*:file=gc-master.out:time,uptime -Dio.netty.leakDetectionLevel=advanced"
   CELEBORN_WORKER_MEMORY: 4g
   CELEBORN_WORKER_OFFHEAP_MEMORY: 24g
-  CELEBORN_WORKER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-worker.out -Dio.netty.leakDetectionLevel=advanced"
+  CELEBORN_WORKER_JAVA_OPTS: "-Xlog:gc*:file=gc-worker.out:time,uptime -Dio.netty.leakDetectionLevel=advanced"
   CELEBORN_NO_DAEMONIZE: 1
   TZ: "Australia/Melbourne"
 

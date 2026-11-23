@@ -1,0 +1,128 @@
+# Dedicated, fixed-shape capacity for the EMR 8.1 (Spark 4.1) +/- Celeborn benchmark.
+# Everything is pinned to ONE AZ and ONE instance type per role, on-demand only,
+# so the "with Celeborn" and "without Celeborn" runs get identical hardware.
+#
+# Instance store (NVMe) is assembled as RAID0 and used for kubelet/containerd, so
+# emptyDir volumes (Spark local dirs, Celeborn worker dirs) land on local NVMe.
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: nvme-raid0
+spec:
+  amiSelectorTerms:
+    # pinned: @latest drift-replaced every node mid-benchmark when a new EKS AMI was released
+    - alias: al2023@v20261119
+  role: KarpenterNodeRole-loadtest-mcp
+  instanceStorePolicy: RAID0
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        encrypted: true
+        volumeSize: 100Gi
+        volumeType: gp3
+  metadataOptions:
+    httpEndpoint: enabled
+    httpProtocolIPv6: disabled
+    httpPutResponseHopLimit: 1
+    httpTokens: required
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: loadtest-mcp
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery-3az: loadtest-mcp
+  tags:
+    Name: loadtest-mcp-karpenter-nvme
+  userData: |
+    apiVersion: node.eks.aws/v1alpha1
+    kind: NodeConfig
+    spec:
+      kubelet:
+        config:
+          registryPullQPS: 30
+          registryBurst: 50
+---
+# Celeborn masters + workers: 2 x i7i.xlarge (4 vCPU, 32 GiB, 937 GB NVMe, up to 10 Gbps)
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: celeborn
+spec:
+  limits:
+    cpu: "128"
+  disruption:
+    consolidationPolicy: WhenEmpty
+    consolidateAfter: 10m
+    # Never replace drifted nodes (new AMI, NodeClass change) under a running benchmark:
+    # they are only marked Drifted. Roll them deliberately between runs.
+    budgets:
+      - nodes: "0"
+        reasons: ["Drifted"]
+      - nodes: "10%"
+  template:
+    metadata:
+      labels:
+        workload: celeborn
+    spec:
+      expireAfter: Never
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: nvme-raid0
+      taints:
+        - key: dedicated
+          value: celeborn
+          effect: NoSchedule
+      requirements:
+        - key: node.kubernetes.io/instance-type
+          operator: In
+          values: ["i7i.xlarge"]  
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["on-demand"]
+        - key: topology.kubernetes.io/zone
+          operator: In
+          values: ["us-west-2a", "us-west-2b", "us-west-2c"]
+---
+# Spark driver + executors (both runs): EBS-only r-family 8xlarge (32 vCPU, 256 GiB, no instance store).
+# Without Celeborn, shuffle goes to the gp3 root volume; instanceStorePolicy is a no-op on these types.
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: spark-bench
+spec:
+  limits:
+    cpu: "96"
+  disruption:
+    consolidationPolicy: WhenEmpty
+    consolidateAfter: 1m
+    # Never replace drifted nodes (new AMI, NodeClass change) under a running benchmark:
+    # they are only marked Drifted. Roll them deliberately between runs.
+    budgets:
+      - nodes: "0"
+        reasons: ["Drifted"]
+      - nodes: "10%"
+  template:
+    metadata:
+      labels:
+        workload: spark-bench
+    spec:
+      expireAfter: Never
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: nvme-raid0
+      taints:
+        - key: dedicated
+          value: spark-bench
+          effect: NoSchedule
+      requirements:
+        - key: node.kubernetes.io/instance-type
+          operator: In
+          values: ["r5.8xlarge","r6i.8xlarge","r7i.8xlarge","r8i.8xlarge"]
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["on-demand"]
+        - key: topology.kubernetes.io/zone
+          operator: In
+          values: ["us-west-2a"]

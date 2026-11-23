@@ -1,0 +1,179 @@
+# Values for the OFFICIAL Apache Celeborn Helm chart (apache/celeborn charts/celeborn @ main 6b153a5, for KEDA autoscaling; not in v0.7.0).
+#   helm install celeborn <celeborn-src>/charts/celeborn -n celeborn -f celeborn-values.yaml
+# Sized for 2 x i7i.xlarge (4 vCPU / 32 GiB / 937 GB NVMe in RAID0); each node runs 1 worker + 1 master.
+image:
+  registry: public.ecr.aws
+  repository: myang-poc/celeborn-rss
+  tag: clb1.0.0-SNAPSHOT-6b153a5_spark4.1_jdk17  # apache/celeborn main 6b153a5 (2026-11-20)
+  pullPolicy: IfNotPresent
+
+# Thread/connection tuning matches charts/celeborn-shuffle-service/values.yaml in this repo
+# (keys renamed for 0.7: *.metrics.prometheus.port -> *.http.port, rpc.dispatcher.numThreads -> .threads).
+celeborn:
+  # ============================================================================
+  # Mater
+  # ============================================================================
+  celeborn.master.ha.ratis.raft.server.storage.dir: /mnt/celeborn_ratis
+  celeborn.master.http.port: 9098
+  celeborn.master.heartbeat.worker.timeout: 120s
+  celeborn.master.heartbeat.application.timeout: 300s
+  # ============================================================================
+  # Worker
+  # ============================================================================
+  celeborn.worker.http.port: 9096
+  celeborn.worker.heartbeat.timeout: 120s
+  celeborn.metrics.enabled: true
+  celeborn.metrics.prometheus.path: /metrics/prometheus
+  celeborn.worker.storage.dirs: /mnt/disk1:disktype=SSD:capacity=800Gi
+  celeborn.worker.graceful.shutdown.enabled: true
+  # graceful shutdown requires fixed (non-zero) worker ports
+  celeborn.worker.rpc.port: 9091
+  celeborn.worker.fetch.port: 9092
+  celeborn.worker.push.port: 9093
+  celeborn.worker.replicate.port: 9094
+  celeborn.worker.monitor.disk.enabled: true
+  celeborn.worker.flusher.buffer.size: 256K
+  celeborn.worker.flusher.threads: 512
+  celeborn.worker.flusher.ssd.threads: 512
+  celeborn.worker.fetch.io.threads: 256
+  celeborn.worker.push.io.threads: 128
+  celeborn.worker.commitFiles.threads: 128
+  celeborn.shuffle.chunk.size: 8m
+  # ============================================================================
+  # Network
+  # ============================================================================
+  celeborn.rpc.io.serverThreads: 64
+  celeborn.rpc.io.clientThreads: 64
+  celeborn.rpc.io.numConnectionsPerPeer: 8
+  celeborn.rpc.dispatcher.threads: 4
+  celeborn.replicate.io.numConnectionsPerPeer: 24
+  # ============================================================================
+  # Client
+  # ============================================================================
+  celeborn.client.push.stageEnd.timeout: 900s
+# Shared scheduling: dedicated Celeborn nodes only.
+x-scheduling: &scheduling
+  nodeSelector:
+    workload: celeborn
+  tolerations:
+    - key: dedicated
+      operator: Equal
+      value: celeborn
+      effect: NoSchedule
+
+master:
+  # Start with 2 workers: worker.replicas is split evenly across the zones below (1 in 2a, 1 in 2b).
+  replicas: 2
+  <<: *scheduling
+  # opt out of the CloudWatch add-on's ADOT auto-instrumentation (adds a Java agent to the JVM)
+  annotations:
+    instrumentation.opentelemetry.io/inject-java: "false"
+    instrumentation.opentelemetry.io/inject-python: "false"
+    instrumentation.opentelemetry.io/inject-nodejs: "false"
+    instrumentation.opentelemetry.io/inject-dotnet: "false"
+  env:
+    - name: CELEBORN_MASTER_MEMORY
+      value: 1g
+    # JDK 17: the chart's default JDK 8 GC flags would stop the JVM from starting
+    - name: CELEBORN_MASTER_JAVA_OPTS
+      value: "-Xlog:gc*:file=gc-master.out:time,uptime -Dio.netty.leakDetectionLevel=advanced"
+    - name: CELEBORN_NO_DAEMONIZE
+      value: "true"
+    - name: TZ
+      value: UTC
+  resources:
+    requests:
+      cpu: 250m
+      memory: 2Gi
+    limits:
+      memory: 2Gi
+  volumeMounts:
+    - name: celeborn-ratis
+      mountPath: /mnt/celeborn_ratis
+  volumes:
+    - name: celeborn-ratis
+      emptyDir: {}
+  # emptyDir volumes are world-writable, so the whole pod runs as non-root uid 10006.
+  podSecurityContext:
+    runAsUser: 10006
+    runAsGroup: 10006
+    fsGroup: 10006
+  securityContext:
+    runAsUser: 10006
+    runAsGroup: 10006
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+
+worker:
+  replicas: 2
+  <<: *scheduling
+  # opt out of the CloudWatch add-on's ADOT auto-instrumentation (adds a Java agent to the JVM)
+  annotations:
+    instrumentation.opentelemetry.io/inject-java: "false"
+    instrumentation.opentelemetry.io/inject-python: "false"
+    instrumentation.opentelemetry.io/inject-nodejs: "false"
+    instrumentation.opentelemetry.io/inject-dotnet: "false"
+  zoneAwareReplication:
+    enabled: true
+    zones:
+      - name: us-west-2a
+        nodeSelector:
+          topology.kubernetes.io/zone: us-west-2a
+      - name: us-west-2b
+        nodeSelector:
+          topology.kubernetes.io/zone: us-west-2b
+  terminationGracePeriodSeconds: 21900
+  drain:
+    enabled: true
+    alwaysDecommission: true
+  autoscaling:
+    enabled: true
+    # per zone: each zone scales 1 -> 4 on its own (2 -> 8 workers in total)
+    maxReplicaCount: 4
+    prometheusAddress: http://prometheus-kube-prometheus-prometheus.prometheus.svc.cluster.local:9090
+    behavior:
+      scaleDown:
+        stabilizationWindowSeconds: 1800
+        policies:
+          - type: Pods
+            value: 1
+            periodSeconds: 900
+    diskUsage:
+      enabled: true
+      threshold: "0.70"
+    memoryUsage:
+      enabled: true
+      threshold: "0.70"
+
+  env:
+    - name: CELEBORN_WORKER_MEMORY
+      value: 4g
+    - name: CELEBORN_WORKER_OFFHEAP_MEMORY
+      value: 24g
+    - name: CELEBORN_WORKER_JAVA_OPTS
+      value: "-Xlog:gc*:file=gc-worker.out:time,uptime -Dio.netty.leakDetectionLevel=advanced"
+    - name: CELEBORN_NO_DAEMONIZE
+      value: "true"
+    - name: TZ
+      value: UTC
+  resources:
+    requests:
+      cpu: 2500m
+      memory: 24Gi
+    limits:
+      memory: 30Gi
+  volumeMounts:
+    - name: disk1
+      mountPath: /mnt/disk1
+  volumes:
+    - name: disk1
+      emptyDir: {}
+  podSecurityContext:
+    runAsUser: 10006
+    runAsGroup: 10006
+    fsGroup: 10006
+  securityContext:
+    runAsUser: 10006
+    runAsGroup: 10006
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false

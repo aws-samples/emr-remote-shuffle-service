@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    # keep Karpenter from draining the node (drift, consolidation) while this pod runs
+    karpenter.sh/do-not-disrupt: "true"
+spec:
+  nodeSelector:
+    workload: spark-bench
+    topology.kubernetes.io/zone: us-west-2a
+  tolerations:
+    - key: dedicated
+      operator: Equal
+      value: spark-bench
+      effect: NoSchedule
+  containers:
+    - name: spark-kubernetes-executor
